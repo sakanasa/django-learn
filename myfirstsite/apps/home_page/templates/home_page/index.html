@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Workshop{% endblock %}
+
+{% block extra_head %}
+<style>
+  .typing-cursor {
+    border-right: 3px solid #C3ABE4;
+    animation: blink-caret 0.8s step-end infinite;
+  }
+  @keyframes blink-caret {
+    0%, 100% { border-color: #C3ABE4; }
+    50% { border-color: transparent; }
+  }
+  .card-enter {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: card-fade-in 0.6s ease forwards;
+  }
+  .card-enter:nth-child(2) { animation-delay: 0.15s; }
+  .card-enter:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes card-fade-in {
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="flex flex-col items-center justify-center min-h-[55vh] text-center px-4">
+  <h1 class="text-4xl sm:text-5xl md:text-7xl font-display font-bold gradient-text mb-6 leading-tight">
+    <span id="typed-text"></span><span class="typing-cursor">&nbsp;</span>
+  </h1>
+  <p class="text-base sm:text-lg text-gray-400 max-w-2xl leading-relaxed whitespace-pre-line"
+     data-i18n="home.subtitle">夢幻般的工具與專案集合。
+探索下方的模組開始使用。</p>
+</section>
+
+<!-- Module Cards -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8 mb-16">
+
+  <!-- Card: Deck Statistics -->
+  <a href="{% url 'pie_chart:dashboard' %}"
+     class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
+    <div class="flex items-center gap-4 mb-4">
+      <div class="w-12 h-12 rounded-xl bg-cyrene-pink/15 flex items-center justify-center">
+        <i class="fas fa-chart-pie text-xl text-cyrene-pink"></i>
+      </div>
+      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-pink transition-colors"
+          data-i18n="home.deck_stats_title">牌組統計</h3>
+    </div>
+    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.deck_stats_desc">
+      分析卡牌遊戲比賽的牌組分佈。輸入牌組代碼，生成精美的系列佔比圓餅圖。
+    </p>
+    <div class="mt-6 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
+      <span data-i18n="home.explore">探索</span>
+      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+    </div>
+  </a>
+
+  <!-- Card: Journal -->
+  <a href="{% url 'journal:list' %}"
+     class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
+    <div class="flex items-center gap-4 mb-4">
+      <div class="w-12 h-12 rounded-xl bg-cyrene-lavender/15 flex items-center justify-center">
+        <i class="fas fa-book-open text-xl text-cyrene-lavender"></i>
+      </div>
+      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-lavender transition-colors"
+          data-i18n="home.journal_title">日誌</h3>
+    </div>
+    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.journal_desc">
+      個人日誌與筆記。在時間牆上記錄想法、靈感與每日感想。
+    </p>
+    <div class="mt-6 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
+      <span data-i18n="home.explore">探索</span>
+      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+    </div>
+  </a>
+
+  <!-- Card: Coming Soon Placeholder -->
+  <div class="card-enter glass p-8 rounded-2xl border border-dashed border-white/10 opacity-50">
+    <div class="flex items-center gap-4 mb-4">
+      <div class="w-12 h-12 rounded-xl bg-cyrene-lavender/10 flex items-center justify-center">
+        <i class="fas fa-plus text-xl text-cyrene-lavender/50"></i>
+      </div>
+      <h3 class="text-xl font-display font-semibold text-gray-500" data-i18n="home.coming_soon">敬請期待</h3>
+    </div>
+    <p class="text-gray-600 text-sm leading-relaxed" data-i18n="home.coming_soon_desc">
+      新的模組和工具將會在此出現。
+    </p>
+  </div>
+
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Typing animation - language aware
+  const phrasesMap = {
+    zh: ['歡迎來到sakanasa的工坊', '牌組分析','心情日誌', '更多即將推出...'],
+    en: ['Welcome to Sakanasa Workshop', 'Deck Analytics','Journal', 'More Coming Soon...']
+  };
+  let phraseIndex = 0;
+  let charIndex = 0;
+  let isDeleting = false;
+  const typedEl = document.getElementById('typed-text');
+
+  function getPhrases() {
+    return phrasesMap[getLang()] || phrasesMap.zh;
+  }
+
+  function type() {
+    const phrases = getPhrases();
+    const current = phrases[phraseIndex % phrases.length];
+    if (!isDeleting) {
+      typedEl.textContent = current.substring(0, charIndex + 1);
+      charIndex++;
+      if (charIndex === current.length) {
+        isDeleting = true;
+        setTimeout(type, 2000);
+        return;
+      }
+      setTimeout(type, 80);
+    } else {
+      typedEl.textContent = current.substring(0, charIndex - 1);
+      charIndex--;
+      if (charIndex === 0) {
+        isDeleting = false;
+        phraseIndex = (phraseIndex + 1) % phrases.length;
+        setTimeout(type, 400);
+        return;
+      }
+      setTimeout(type, 40);
+    }
+  }
+  type();
+
+  // When language changes, reset typing animation
+  document.addEventListener('langchange', function() {
+    isDeleting = true;
+  });
+</script>
+{% endblock %}

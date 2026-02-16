@@ -1,0 +1,410 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Sakanasa's Workshop{% endblock %}</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cyrene: {
+              pink: '#F2A7C3',
+              blue: '#A8D8EA',
+              lavender: '#C3ABE4',
+              dark: '#1A1A2E',
+              navy: '#16213E',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans TC', 'sans-serif'],
+            display: ['Space Grotesk', 'Noto Sans TC', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <style>
+    /* ===== Animated Background Blobs ===== */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.25;
+      animation: float 20s infinite ease-in-out;
+      pointer-events: none;
+    }
+    .blob-1 {
+      width: 600px; height: 600px;
+      background: #F2A7C3;
+      top: -200px; left: -100px;
+    }
+    .blob-2 {
+      width: 500px; height: 500px;
+      background: #A8D8EA;
+      top: 50%; right: -150px;
+      animation-delay: -7s;
+    }
+    .blob-3 {
+      width: 400px; height: 400px;
+      background: #C3ABE4;
+      bottom: -100px; left: 30%;
+      animation-delay: -14s;
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -50px) scale(1.05); }
+      66% { transform: translate(-20px, 30px) scale(0.95); }
+    }
+
+    /* ===== Glassmorphism ===== */
+    .glass {
+      background: rgba(26, 26, 46, 0.45);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* ===== Gradient Text ===== */
+    .gradient-text {
+      background: linear-gradient(135deg, #F2A7C3, #A8D8EA, #C3ABE4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ===== Card Glow on Hover ===== */
+    .card-glow {
+      transition: box-shadow 0.3s ease, transform 0.3s ease;
+    }
+    .card-glow:hover {
+      box-shadow:
+        0 0 20px rgba(242, 167, 195, 0.15),
+        0 0 40px rgba(168, 216, 234, 0.1),
+        0 0 60px rgba(195, 171, 228, 0.05);
+      transform: translateY(-2px);
+    }
+
+    /* ===== Scrollbar ===== */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1A1A2E; }
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #F2A7C3, #C3ABE4);
+      border-radius: 3px;
+    }
+
+    /* ===== Nav Link Hover Underline ===== */
+    .nav-link-hover {
+      position: relative;
+    }
+    .nav-link-hover::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #F2A7C3, #A8D8EA);
+      transition: width 0.3s ease;
+    }
+    .nav-link-hover:hover::after {
+      width: 100%;
+    }
+
+    /* ===== Language Toggle ===== */
+    .lang-toggle {
+      position: relative;
+      width: 52px;
+      height: 26px;
+      border-radius: 13px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
+      cursor: pointer;
+      transition: background 0.3s;
+      flex-shrink: 0;
+    }
+    .lang-toggle:hover { background: rgba(255,255,255,0.12); }
+    .lang-toggle-knob {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #F2A7C3, #C3ABE4);
+      transition: transform 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 700;
+      color: #1A1A2E;
+    }
+    .lang-toggle-knob.en { transform: translateX(26px); }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body class="bg-cyrene-dark min-h-screen font-sans text-gray-200 overflow-x-hidden">
+
+  <!-- Animated Background -->
+  <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="glass sticky top-0 z-50 border-b border-white/5">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo -->
+        <a href="{% url 'home_page:index' %}" class="flex items-center gap-2">
+          <i class="fas fa-sparkles text-cyrene-pink text-xl"></i>
+          <span class="text-xl font-display font-bold gradient-text">sakanasa工坊</span>
+        </a>
+
+        <!-- Desktop Nav Links -->
+        <div class="hidden md:flex items-center gap-8">
+          <a href="{% url 'home_page:index' %}"
+             class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-pink transition-colors">
+            <i class="fas fa-home mr-1"></i> <span data-i18n="nav.home">首頁</span>
+          </a>
+          <a href="{% url 'pie_chart:dashboard' %}"
+             class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-blue transition-colors">
+            <i class="fas fa-chart-pie mr-1"></i> <span data-i18n="nav.deck_stats">牌組統計</span>
+          </a>
+          <a href="{% url 'journal:list' %}"
+             class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-lavender transition-colors">
+            <i class="fas fa-book-open mr-1"></i> <span data-i18n="nav.journal">日誌</span>
+          </a>
+
+          <!-- Language Toggle -->
+          <div class="lang-toggle" id="lang-toggle" title="切換語言 / Switch Language">
+            <div class="lang-toggle-knob" id="lang-knob">中</div>
+          </div>
+
+          <!-- Auth -->
+          <div class="h-4 w-px bg-white/10"></div>
+          {% if user.is_authenticated %}
+          <span class="text-xs text-gray-500"><i class="fas fa-user mr-1"></i>{{ user.username }}</span>
+          <a href="{% url 'logout' %}"
+             class="text-xs text-gray-400 hover:text-cyrene-pink transition-colors">
+            <span data-i18n="nav.logout">登出</span>
+          </a>
+          {% else %}
+          <a href="{% url 'login' %}"
+             class="text-xs px-3 py-1.5 rounded-lg border border-cyrene-pink/30 text-cyrene-pink
+                    hover:bg-cyrene-pink/10 transition-colors">
+            <i class="fas fa-sign-in-alt mr-1"></i> <span data-i18n="nav.login">登入</span>
+          </a>
+          {% endif %}
+        </div>
+
+        <!-- Mobile Hamburger -->
+        <div class="flex md:hidden items-center gap-3">
+          <div class="lang-toggle" id="lang-toggle-mobile">
+            <div class="lang-toggle-knob" id="lang-knob-mobile">中</div>
+          </div>
+          <button id="mobile-menu-btn" class="text-gray-300 hover:text-cyrene-pink transition-colors">
+            <i class="fas fa-bars text-xl"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div id="mobile-menu" class="hidden md:hidden pb-4 space-y-2">
+        <a href="{% url 'home_page:index' %}"
+           class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-pink hover:bg-white/5 transition-colors">
+          <i class="fas fa-home mr-2"></i> <span data-i18n="nav.home">首頁</span>
+        </a>
+        <a href="{% url 'pie_chart:dashboard' %}"
+           class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-blue hover:bg-white/5 transition-colors">
+          <i class="fas fa-chart-pie mr-2"></i> <span data-i18n="nav.deck_stats">牌組統計</span>
+        </a>
+        <a href="{% url 'journal:list' %}"
+           class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-lavender hover:bg-white/5 transition-colors">
+          <i class="fas fa-book-open mr-2"></i> <span data-i18n="nav.journal">日誌</span>
+        </a>
+        <div class="border-t border-white/5 pt-2 mt-2">
+          {% if user.is_authenticated %}
+          <span class="block px-3 py-1 text-xs text-gray-500"><i class="fas fa-user mr-1"></i>{{ user.username }}</span>
+          <a href="{% url 'logout' %}"
+             class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-pink hover:bg-white/5 transition-colors">
+            <i class="fas fa-sign-out-alt mr-2"></i> <span data-i18n="nav.logout">登出</span>
+          </a>
+          {% else %}
+          <a href="{% url 'login' %}"
+             class="block px-3 py-2 rounded-lg text-cyrene-pink hover:bg-white/5 transition-colors">
+            <i class="fas fa-sign-in-alt mr-2"></i> <span data-i18n="nav.login">登入</span>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="glass border-t border-white/5 mt-16">
+    <div class="max-w-7xl mx-auto px-4 py-6 text-center">
+      <p class="text-sm text-gray-500">
+        <span data-i18n="footer.built_with">用</span> <i class="fas fa-heart text-cyrene-pink/60"></i> &
+        <span class="gradient-text font-medium">Django</span>
+        <span data-i18n="footer.built_suffix">打造</span>
+      </p>
+    </div>
+  </footer>
+
+  <!-- i18n Translation Engine -->
+  <script>
+    const I18N = {
+      zh: {
+        'nav.home': '首頁', 'nav.deck_stats': '牌組統計', 'nav.journal': '日誌',
+        'nav.login': '登入', 'nav.logout': '登出', 'nav.language': '語言',
+        'footer.built_with': '用', 'footer.built_suffix': '打造',
+        'home.subtitle': '夢幻般的工具與專案集合。\n探索下方的模組開始使用。',
+        'home.deck_stats_title': '牌組統計',
+        'home.deck_stats_desc': '分析卡牌遊戲比賽的牌組分佈。輸入牌組代碼，生成精美的系列佔比圓餅圖。',
+        'home.journal_title': '日誌',
+        'home.journal_desc': '個人日誌與筆記。在時間牆上記錄想法、靈感與每日感想。',
+        'home.coming_soon': '敬請期待', 'home.coming_soon_desc': '新的模組和工具將會在此出現。',
+        'home.explore': '探索',
+        'pie.title': '牌組分佈分析', 'pie.tournament_info': '比賽資訊',
+        'pie.tournament_name': '比賽名稱', 'pie.date': '日期',
+        'pie.deck_codes': '牌組代碼', 'pie.generate': '生成圖表',
+        'pie.code_list': '代碼清單', 'pie.deck_code_col': '牌組代碼',
+        'pie.empty_list': '尚未新增任何代碼。', 'pie.chart_title': '生成圖表',
+        'pie.save': '儲存', 'pie.chart_placeholder': '圖表將在生成後顯示於此。',
+        'pie.enter_name': '輸入比賽名稱...', 'pie.enter_code': '輸入牌組代碼...',
+        'journal.title': '日誌', 'journal.new_entry': '新增日誌',
+        'journal.no_entries': '目前沒有日誌。',
+        'journal.start_writing': '開始撰寫你的第一篇日誌。',
+        'journal.login_to_write': '登入後即可開始撰寫。',
+        'journal.show_more': '展開更多', 'journal.show_less': '收合',
+        'journal.delete_confirm': '確定要刪除這筆日誌嗎？',
+        'journal.new_title': '新增日誌',
+        'journal.form_title': '標題', 'journal.form_title_opt': '（選填）',
+        'journal.form_title_placeholder': '為這篇日誌取個標題...',
+        'journal.form_mood': '心情', 'journal.form_mood_opt': '（選填）',
+        'journal.form_content': '內容',
+        'journal.form_content_placeholder': '寫點什麼...',
+        'journal.form_cancel': '取消', 'journal.form_save': '儲存日誌',
+        'login.welcome': '歡迎回來', 'login.subtitle': '登入以使用完整功能',
+        'login.error': '帳號或密碼錯誤。',
+        'login.username': '帳號', 'login.password': '密碼',
+        'login.submit': '登入',
+        'login.username_placeholder': '帳號', 'login.password_placeholder': '密碼',
+      },
+      en: {
+        'nav.home': 'Home', 'nav.deck_stats': 'Deck Stats', 'nav.journal': 'Journal',
+        'nav.login': 'Login', 'nav.logout': 'Logout', 'nav.language': 'Language',
+        'footer.built_with': 'Built with', 'footer.built_suffix': '',
+        'home.subtitle': 'A dreamy collection of tools and projects.\nExplore the modules below to get started.',
+        'home.deck_stats_title': 'Deck Statistics',
+        'home.deck_stats_desc': 'Analyze card game tournament deck distributions. Input deck codes, generate beautiful pie charts with series breakdown.',
+        'home.journal_title': 'Journal',
+        'home.journal_desc': 'Personal log and notes. Record thoughts, ideas, and daily reflections on a timeline wall.',
+        'home.coming_soon': 'Coming Soon', 'home.coming_soon_desc': 'New modules and tools will appear here as they are built. Stay tuned.',
+        'home.explore': 'Explore',
+        'pie.title': 'Deck Distribution Analysis', 'pie.tournament_info': 'Tournament Info',
+        'pie.tournament_name': 'Tournament Name', 'pie.date': 'Date',
+        'pie.deck_codes': 'Deck Codes', 'pie.generate': 'Generate Chart',
+        'pie.code_list': 'Code List', 'pie.deck_code_col': 'Deck Code',
+        'pie.empty_list': 'No deck codes added yet.', 'pie.chart_title': 'Generated Chart',
+        'pie.save': 'Save', 'pie.chart_placeholder': 'Chart will appear here after generation.',
+        'pie.enter_name': 'Enter tournament name...', 'pie.enter_code': 'Enter deck code...',
+        'journal.title': 'Journal', 'journal.new_entry': 'New Entry',
+        'journal.no_entries': 'No entries yet.',
+        'journal.start_writing': 'Start writing your first journal entry.',
+        'journal.login_to_write': 'Log in to start writing.',
+        'journal.show_more': 'Show more', 'journal.show_less': 'Show less',
+        'journal.delete_confirm': 'Delete this entry?',
+        'journal.new_title': 'New Journal Entry',
+        'journal.form_title': 'Title', 'journal.form_title_opt': '(optional)',
+        'journal.form_title_placeholder': 'Give this entry a title...',
+        'journal.form_mood': 'Mood', 'journal.form_mood_opt': '(optional)',
+        'journal.form_content': 'Content',
+        'journal.form_content_placeholder': 'Write something...',
+        'journal.form_cancel': 'Cancel', 'journal.form_save': 'Save Entry',
+        'login.welcome': 'Welcome Back', 'login.subtitle': 'Sign in to access full features',
+        'login.error': 'Invalid username or password.',
+        'login.username': 'Username', 'login.password': 'Password',
+        'login.submit': 'Sign In',
+        'login.username_placeholder': 'Username', 'login.password_placeholder': 'Password',
+      }
+    };
+
+    function getLang() { return localStorage.getItem('lang') || 'zh'; }
+
+    function setLang(lang) {
+      localStorage.setItem('lang', lang);
+      applyLang(lang);
+    }
+
+    function t(key) {
+      const lang = getLang();
+      return (I18N[lang] && I18N[lang][key]) || key;
+    }
+
+    function applyLang(lang) {
+      document.documentElement.lang = lang === 'zh' ? 'zh-Hant' : 'en';
+      document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        const key = el.getAttribute('data-i18n');
+        const text = I18N[lang] && I18N[lang][key];
+        if (text !== undefined) el.textContent = text;
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+        const key = el.getAttribute('data-i18n-placeholder');
+        const text = I18N[lang] && I18N[lang][key];
+        if (text !== undefined) el.placeholder = text;
+      });
+      var label = lang === 'zh' ? '中' : 'EN';
+      document.querySelectorAll('.lang-toggle-knob').forEach(function(knob) {
+        knob.textContent = label;
+        if (lang === 'en') knob.classList.add('en');
+        else knob.classList.remove('en');
+      });
+      document.dispatchEvent(new CustomEvent('langchange', { detail: { lang: lang } }));
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      applyLang(getLang());
+      document.querySelectorAll('.lang-toggle').forEach(function(toggle) {
+        toggle.addEventListener('click', function() {
+          setLang(getLang() === 'zh' ? 'en' : 'zh');
+        });
+      });
+    });
+  </script>
+
+  <!-- Mobile Menu Toggle -->
+  <script>
+    document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+      var menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    });
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

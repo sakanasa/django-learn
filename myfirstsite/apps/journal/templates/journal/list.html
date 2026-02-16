@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Journal - Workshop{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Timeline connector */
+  .timeline-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #F2A7C3, #A8D8EA);
+    flex-shrink: 0;
+  }
+  .timeline-line {
+    width: 2px;
+    background: linear-gradient(180deg, rgba(242,167,195,0.3), rgba(168,216,234,0.1));
+    flex-shrink: 0;
+  }
+  .entry-card {
+    transition: all 0.3s ease;
+  }
+  .entry-card:hover {
+    box-shadow: 0 0 20px rgba(242, 167, 195, 0.1);
+  }
+  .entry-content.collapsed {
+    max-height: 4.5em;
+    overflow: hidden;
+    position: relative;
+  }
+  .entry-content.collapsed::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2em;
+    background: linear-gradient(transparent, rgba(26, 26, 46, 0.9));
+    pointer-events: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-10">
+    <h1 class="text-3xl font-display font-bold gradient-text">
+      <i class="fas fa-book-open mr-3"></i><span data-i18n="journal.title">日誌</span>
+    </h1>
+    {% if user.is_authenticated %}
+    <a href="{% url 'journal:create' %}"
+       class="px-5 py-2.5 rounded-lg font-semibold text-white text-sm
+              bg-gradient-to-r from-cyrene-pink via-cyrene-lavender to-cyrene-blue
+              hover:opacity-90 transition-opacity">
+      <i class="fas fa-plus mr-2"></i><span data-i18n="journal.new_entry">新增日誌</span>
+    </a>
+    {% endif %}
+  </div>
+
+  {% if grouped_entries %}
+    {% for date, entries in grouped_entries %}
+    <!-- Date Group -->
+    <div class="mb-10">
+      <!-- Date Header -->
+      <div class="flex items-center gap-3 mb-4">
+        <div class="timeline-dot"></div>
+        <h2 class="text-sm font-medium text-cyrene-blue tracking-wide uppercase">
+          {{ date|date:"Y / m / d  (l)" }}
+        </h2>
+        <div class="flex-1 h-px bg-gradient-to-r from-cyrene-blue/20 to-transparent"></div>
+      </div>
+
+      <!-- Entries -->
+      <div class="ml-[5px] border-l-2 border-white/5 pl-8 space-y-4">
+        {% for entry in entries %}
+        <div class="entry-card glass rounded-2xl p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <!-- Mood + Title + Time -->
+              <div class="flex items-center gap-2 mb-2 flex-wrap">
+                {% if entry.mood_emoji %}
+                <span class="text-lg" title="{{ entry.mood }}">{{ entry.mood_emoji }}</span>
+                {% endif %}
+                {% if entry.title %}
+                <h3 class="font-display font-semibold text-white text-base">{{ entry.title }}</h3>
+                {% endif %}
+                <span class="text-xs text-gray-500 ml-auto shrink-0">
+                  {{ entry.created_at|date:"H:i" }}
+                </span>
+              </div>
+
+              <!-- Content -->
+              <div id="content-{{ entry.pk }}"
+                   class="entry-content collapsed text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">{{ entry.content }}</div>
+
+              <!-- Toggle Button -->
+              <button onclick="toggleContent({{ entry.pk }})"
+                      id="toggle-{{ entry.pk }}"
+                      class="mt-2 text-xs text-cyrene-lavender/70 hover:text-cyrene-lavender transition-colors hidden">
+                <i class="fas fa-chevron-down mr-1"></i><span data-i18n="journal.show_more">展開更多</span>
+              </button>
+            </div>
+
+            {% if user.is_authenticated %}
+            <form method="post" action="{% url 'journal:delete' entry.pk %}"
+                  class="journal-delete-form">
+              {% csrf_token %}
+              <button type="submit"
+                      class="text-gray-600 hover:text-cyrene-pink transition-colors text-sm p-1 shrink-0">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+  {% else %}
+    <!-- Empty State -->
+    <div class="flex flex-col items-center justify-center py-20 text-center">
+      <i class="fas fa-feather-alt text-5xl text-cyrene-lavender/20 mb-4"></i>
+      <p class="text-gray-500 text-lg mb-2" data-i18n="journal.no_entries">目前沒有日誌。</p>
+      <p class="text-gray-600 text-sm">
+        {% if user.is_authenticated %}
+        <span data-i18n="journal.start_writing">開始撰寫你的第一篇日誌。</span>
+        {% else %}
+        <span data-i18n="journal.login_to_write">登入後即可開始撰寫。</span>
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Auto-detect which entries need "show more" toggle
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.entry-content').forEach(function(el) {
+      if (el.scrollHeight > el.clientHeight + 4) {
+        const id = el.id.replace('content-', '');
+        document.getElementById('toggle-' + id).classList.remove('hidden');
+      } else {
+        el.classList.remove('collapsed');
+      }
+    });
+
+    // Delete confirmation with i18n
+    document.querySelectorAll('.journal-delete-form').forEach(function(form) {
+      form.addEventListener('submit', function(e) {
+        if (!confirm(t('journal.delete_confirm'))) {
+          e.preventDefault();
+        }
+      });
+    });
+  });
+
+  function toggleContent(pk) {
+    const content = document.getElementById('content-' + pk);
+    const toggle = document.getElementById('toggle-' + pk);
+    const isCollapsed = content.classList.contains('collapsed');
+
+    content.classList.toggle('collapsed');
+    if (isCollapsed) {
+      toggle.innerHTML = '<i class="fas fa-chevron-up mr-1"></i><span>' + t('journal.show_less') + '</span>';
+    } else {
+      toggle.innerHTML = '<i class="fas fa-chevron-down mr-1"></i><span>' + t('journal.show_more') + '</span>';
+    }
+  }
+</script>
+{% endblock %}

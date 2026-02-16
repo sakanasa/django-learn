@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}New Entry - Journal{% endblock %}
+
+{% block extra_head %}
+<style>
+  .mood-btn {
+    transition: all 0.2s ease;
+    opacity: 0.5;
+  }
+  .mood-btn:hover {
+    opacity: 0.8;
+    transform: scale(1.15);
+  }
+  .mood-btn.selected {
+    opacity: 1;
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 6px rgba(242, 167, 195, 0.4));
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <!-- Header -->
+  <div class="flex items-center gap-3 mb-8">
+    <a href="{% url 'journal:list' %}"
+       class="text-gray-400 hover:text-cyrene-pink transition-colors">
+      <i class="fas fa-arrow-left"></i>
+    </a>
+    <h1 class="text-2xl font-display font-bold gradient-text" data-i18n="journal.new_title">
+      新增日誌
+    </h1>
+  </div>
+
+  {% if error %}
+  <div class="glass rounded-xl p-4 mb-6 border border-cyrene-pink/30 text-cyrene-pink text-sm">
+    <i class="fas fa-exclamation-circle mr-2"></i>{{ error }}
+  </div>
+  {% endif %}
+
+  <form method="post" class="glass rounded-2xl p-6 sm:p-8">
+    {% csrf_token %}
+
+    <!-- Title -->
+    <div class="mb-5">
+      <label for="title" class="block text-sm text-gray-400 mb-1">
+        <span data-i18n="journal.form_title">標題</span> <span class="text-gray-600" data-i18n="journal.form_title_opt">（選填）</span>
+      </label>
+      <input type="text" id="title" name="title"
+        class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5
+               text-white placeholder-gray-500
+               focus:outline-none focus:border-cyrene-pink focus:ring-1 focus:ring-cyrene-pink/50
+               transition-colors"
+        data-i18n-placeholder="journal.form_title_placeholder"
+        placeholder="為這篇日誌取個標題..." />
+    </div>
+
+    <!-- Mood -->
+    <div class="mb-5">
+      <label class="block text-sm text-gray-400 mb-2">
+        <span data-i18n="journal.form_mood">心情</span> <span class="text-gray-600" data-i18n="journal.form_mood_opt">（選填）</span>
+      </label>
+      <div class="flex gap-3">
+        {% for value, label, emoji in mood_options %}
+        <button type="button"
+                class="mood-btn text-2xl p-2 rounded-lg"
+                data-mood="{{ value }}"
+                title="{{ label }}"
+                onclick="selectMood('{{ value }}')">
+          {{ emoji }}
+        </button>
+        {% endfor %}
+      </div>
+      <input type="hidden" name="mood" id="mood-input" value="" />
+    </div>
+
+    <!-- Content -->
+    <div class="mb-6">
+      <label for="content" class="block text-sm text-gray-400 mb-1" data-i18n="journal.form_content">
+        內容
+      </label>
+      <textarea id="content" name="content" rows="8"
+        class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3
+               text-white placeholder-gray-500 leading-relaxed resize-y
+               focus:outline-none focus:border-cyrene-lavender focus:ring-1 focus:ring-cyrene-lavender/50
+               transition-colors"
+        data-i18n-placeholder="journal.form_content_placeholder"
+        placeholder="寫點什麼..."></textarea>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center justify-end gap-3">
+      <a href="{% url 'journal:list' %}"
+         class="px-5 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white transition-colors"
+         data-i18n="journal.form_cancel">
+        取消
+      </a>
+      <button type="submit"
+        class="px-6 py-2.5 rounded-lg font-semibold text-white text-sm
+               bg-gradient-to-r from-cyrene-pink via-cyrene-lavender to-cyrene-blue
+               hover:opacity-90 transition-opacity">
+        <i class="fas fa-paper-plane mr-2"></i><span data-i18n="journal.form_save">儲存日誌</span>
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function selectMood(mood) {
+    const input = document.getElementById('mood-input');
+    const buttons = document.querySelectorAll('.mood-btn');
+
+    // Toggle: clicking the same mood deselects it
+    if (input.value === mood) {
+      input.value = '';
+      buttons.forEach(b => b.classList.remove('selected'));
+      return;
+    }
+
+    input.value = mood;
+    buttons.forEach(b => {
+      if (b.dataset.mood === mood) {
+        b.classList.add('selected');
+      } else {
+        b.classList.remove('selected');
+      }
+    });
+  }
+</script>
+{% endblock %}

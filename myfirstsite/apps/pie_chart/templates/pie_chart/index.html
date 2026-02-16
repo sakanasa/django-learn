@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Deck Statistics - Workshop{% endblock %}
+
+{% block extra_head %}
+<style>
+  input[type="date"] { color-scheme: dark; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+  <h1 class="text-3xl font-display font-bold gradient-text mb-8">
+    <i class="fas fa-chart-pie mr-3"></i><span data-i18n="pie.title">牌組分佈分析</span>
+  </h1>
+
+  {% if error %}
+  <div class="glass rounded-xl p-4 mb-6 border border-cyrene-pink/30 text-cyrene-pink text-sm">
+    <i class="fas fa-exclamation-circle mr-2"></i>{{ error }}
+  </div>
+  {% endif %}
+
+  <form id="deck-form" method="post">
+    {% csrf_token %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- Tournament Info Card -->
+      <div class="glass p-6 rounded-2xl">
+        <h2 class="text-lg font-semibold text-cyrene-pink mb-4">
+          <i class="fas fa-trophy mr-2"></i><span data-i18n="pie.tournament_info">比賽資訊</span>
+        </h2>
+        <div class="mb-4">
+          <label for="game_name" class="block text-sm text-gray-400 mb-1" data-i18n="pie.tournament_name">比賽名稱</label>
+          <input type="text" id="game_name" name="game_name"
+            class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5
+                   text-white placeholder-gray-500
+                   focus:outline-none focus:border-cyrene-pink focus:ring-1 focus:ring-cyrene-pink/50
+                   transition-colors"
+            data-i18n-placeholder="pie.enter_name"
+            placeholder="輸入比賽名稱..." />
+        </div>
+        <div>
+          <label for="game_date" class="block text-sm text-gray-400 mb-1" data-i18n="pie.date">日期</label>
+          <input type="date" id="game_date" name="game_date"
+            class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5
+                   text-white
+                   focus:outline-none focus:border-cyrene-pink focus:ring-1 focus:ring-cyrene-pink/50
+                   transition-colors" />
+        </div>
+      </div>
+
+      <!-- Deck Code Input Card -->
+      <div class="glass p-6 rounded-2xl">
+        <h2 class="text-lg font-semibold text-cyrene-blue mb-4">
+          <i class="fas fa-barcode mr-2"></i><span data-i18n="pie.deck_codes">牌組代碼</span>
+        </h2>
+        <div class="flex items-center gap-2 mb-4">
+          <input type="text" id="deck_code_input" name="people" autocomplete="off"
+            class="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5
+                   text-white placeholder-gray-500
+                   focus:outline-none focus:border-cyrene-blue focus:ring-1 focus:ring-cyrene-blue/50
+                   transition-colors"
+            data-i18n-placeholder="pie.enter_code"
+            placeholder="輸入牌組代碼..." />
+          <button type="button" id="deck_code_confirm"
+            class="w-10 h-10 rounded-lg bg-cyrene-blue/20 text-cyrene-blue
+                   hover:bg-cyrene-blue/30 transition-colors flex items-center justify-center shrink-0">
+            <i class="fas fa-check"></i>
+          </button>
+          <button type="button" id="deck_code_delete"
+            class="w-10 h-10 rounded-lg bg-cyrene-pink/20 text-cyrene-pink
+                   hover:bg-cyrene-pink/30 transition-colors flex items-center justify-center shrink-0">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+        <button type="submit" id="generate_chart"
+          class="w-full py-2.5 rounded-lg font-semibold text-white
+                 bg-gradient-to-r from-cyrene-pink via-cyrene-lavender to-cyrene-blue
+                 hover:opacity-90 transition-opacity">
+          <i class="fas fa-flag mr-2"></i><span data-i18n="pie.generate">生成圖表</span>
+        </button>
+      </div>
+
+      <!-- Code List Table Card -->
+      <div class="glass p-6 rounded-2xl">
+        <h2 class="text-lg font-semibold text-cyrene-lavender mb-4">
+          <i class="fas fa-list mr-2"></i><span data-i18n="pie.code_list">代碼清單</span>
+        </h2>
+        <div class="overflow-x-auto">
+          <table id="myTable" class="w-full">
+            <thead>
+              <tr class="border-b border-white/10 text-gray-400 text-sm">
+                <th class="py-2 text-left px-2 w-16">#</th>
+                <th class="py-2 text-left px-2" data-i18n="pie.deck_code_col">牌組代碼</th>
+              </tr>
+            </thead>
+            <tbody id="code_list_body" class="text-gray-300 text-sm">
+              <!-- Dynamic rows -->
+            </tbody>
+          </table>
+          <p id="empty-list-hint" class="text-gray-600 text-sm text-center py-6" data-i18n="pie.empty_list">
+            尚未新增任何代碼。
+          </p>
+        </div>
+      </div>
+
+      <!-- Chart Display Card -->
+      <div class="glass p-6 rounded-2xl">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-semibold text-cyrene-pink">
+            <i class="fas fa-image mr-2"></i><span data-i18n="pie.chart_title">生成圖表</span>
+          </h2>
+          <a href="#" id="download_chart"
+            class="text-sm text-cyrene-blue hover:text-cyrene-pink transition-colors">
+            <i class="fas fa-download mr-1"></i><span data-i18n="pie.save">儲存</span>
+          </a>
+        </div>
+        <div class="flex items-center justify-center min-h-[200px]">
+          {% if chart_url %}
+          <img id="chart_image" src="{{ chart_url }}" alt="Generated chart"
+            class="max-w-full h-auto rounded-lg" />
+          {% else %}
+          <div class="text-center text-gray-600" id="chart_placeholder">
+            <i class="fas fa-chart-pie text-4xl mb-3 opacity-30"></i>
+            <p class="text-sm" data-i18n="pie.chart_placeholder">圖表將在生成後顯示於此。</p>
+          </div>
+          <img id="chart_image" src="" alt="Generated chart"
+            class="max-w-full h-auto rounded-lg hidden" />
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+    <input type="hidden" name="deck_codes" id="deck_codes_input" />
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let codeList = [];
+
+  function addCode() {
+    const input = document.getElementById("deck_code_input");
+    const value = input.value.trim();
+    if (value) {
+      codeList.push(value);
+      renderTable();
+      input.value = "";
+      input.focus();
+    }
+  }
+
+  // Enter key listener
+  document
+    .getElementById("deck_code_input")
+    .addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        addCode();
+      }
+    });
+
+  // Confirm button
+  document
+    .getElementById("deck_code_confirm")
+    .addEventListener("click", function (event) {
+      event.preventDefault();
+      addCode();
+    });
+
+  // Delete button
+  document
+    .getElementById("deck_code_delete")
+    .addEventListener("click", function (event) {
+      event.preventDefault();
+      if (codeList.length > 0) {
+        codeList.pop();
+        renderTable();
+      }
+    });
+
+  // Render table
+  function renderTable() {
+    const tbody = document.getElementById("code_list_body");
+    const hint = document.getElementById("empty-list-hint");
+    tbody.innerHTML = "";
+    if (codeList.length === 0) {
+      hint.classList.remove("hidden");
+    } else {
+      hint.classList.add("hidden");
+    }
+    codeList.forEach((code, idx) => {
+      const tr = document.createElement("tr");
+      tr.className = "border-b border-white/5";
+      tr.innerHTML = `<td class="py-2 px-2 text-gray-500">${idx + 1}</td><td class="py-2 px-2">${code}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Download chart
+  document
+    .getElementById("download_chart")
+    .addEventListener("click", function (event) {
+      event.preventDefault();
+      const img = document.getElementById("chart_image");
+      const url = img.src;
+      if (!url) {
+        alert("No chart available to download.");
+        return;
+      }
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = url.split("/").pop();
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+
+  // Form submit - join codes
+  document
+    .querySelector("form")
+    .addEventListener("submit", function (event) {
+      document.getElementById("deck_codes_input").value =
+        codeList.join(",");
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Workshop{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-[60vh]">
+  <div class="w-full max-w-sm">
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-display font-bold gradient-text mb-2" data-i18n="login.welcome">歡迎回來</h1>
+      <p class="text-sm text-gray-500" data-i18n="login.subtitle">登入以使用完整功能</p>
+    </div>
+
+    {% if form.errors %}
+    <div class="glass rounded-xl p-4 mb-6 border border-cyrene-pink/30 text-cyrene-pink text-sm">
+      <i class="fas fa-exclamation-circle mr-2"></i><span data-i18n="login.error">帳號或密碼錯誤。</span>
+    </div>
+    {% endif %}
+
+    <form method="post" class="glass rounded-2xl p-6 sm:p-8">
+      {% csrf_token %}
+
+      <div class="mb-4">
+        <label for="id_username" class="block text-sm text-gray-400 mb-1" data-i18n="login.username">帳號</label>
+        <input type="text" name="username" id="id_username" autofocus
+          class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5
+                 text-white placeholder-gray-500
+                 focus:outline-none focus:border-cyrene-pink focus:ring-1 focus:ring-cyrene-pink/50
+                 transition-colors"
+          data-i18n-placeholder="login.username_placeholder"
+          placeholder="帳號" />
+      </div>
+
+      <div class="mb-6">
+        <label for="id_password" class="block text-sm text-gray-400 mb-1" data-i18n="login.password">密碼</label>
+        <input type="password" name="password" id="id_password"
+          class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5
+                 text-white placeholder-gray-500
+                 focus:outline-none focus:border-cyrene-lavender focus:ring-1 focus:ring-cyrene-lavender/50
+                 transition-colors"
+          data-i18n-placeholder="login.password_placeholder"
+          placeholder="密碼" />
+      </div>
+
+      {% if next %}
+      <input type="hidden" name="next" value="{{ next }}" />
+      {% endif %}
+
+      <button type="submit"
+        class="w-full py-2.5 rounded-lg font-semibold text-white
+               bg-gradient-to-r from-cyrene-pink via-cyrene-lavender to-cyrene-blue
+               hover:opacity-90 transition-opacity">
+        <i class="fas fa-sign-in-alt mr-2"></i><span data-i18n="login.submit">登入</span>
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
