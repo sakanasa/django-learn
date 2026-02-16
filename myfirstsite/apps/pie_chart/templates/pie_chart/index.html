@@ -116,7 +116,13 @@
             <i class="fas fa-download mr-1"></i><span data-i18n="pie.save">儲存</span>
           </a>
         </div>
-        <div class="flex items-center justify-center min-h-[200px]">
+        <div class="flex items-center justify-center min-h-[200px] relative">
+          <!-- Loading Overlay -->
+          <div id="chart_loading" class="hidden absolute inset-0 flex flex-col items-center justify-center
+                      bg-black/40 backdrop-blur-sm rounded-lg z-10">
+            <i class="fas fa-spinner fa-spin text-3xl text-cyrene-pink mb-3"></i>
+            <p class="text-sm text-gray-300" data-i18n="pie.generating">圖表生成中，請稍候...</p>
+          </div>
           {% if chart_url %}
           <img id="chart_image" src="{{ chart_url }}" alt="Generated chart"
             class="max-w-full h-auto rounded-lg" />
@@ -218,12 +224,24 @@
       document.body.removeChild(a);
     });
 
-  // Form submit - join codes
+  // Form submit - join codes & show loading
   document
     .querySelector("form")
     .addEventListener("submit", function (event) {
       document.getElementById("deck_codes_input").value =
         codeList.join(",");
+
+      // Show loading overlay
+      document.getElementById("chart_loading").classList.remove("hidden");
+
+      // Hide placeholder if visible
+      const placeholder = document.getElementById("chart_placeholder");
+      if (placeholder) placeholder.classList.add("hidden");
+
+      // Disable button to prevent double-click
+      const btn = document.getElementById("generate_chart");
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i><span data-i18n="pie.generating_btn">生成中...</span>';
     });
 </script>
 {% endblock %}
