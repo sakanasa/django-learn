@@ -193,6 +193,10 @@
              class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-lavender transition-colors">
             <i class="fas fa-book-open mr-1"></i> <span data-i18n="nav.journal">日誌</span>
           </a>
+          <a href="{% url 'color_palette:index' %}"
+             class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-blue transition-colors">
+            <i class="fas fa-palette mr-1"></i> <span data-i18n="nav.color_palette">調色盤</span>
+          </a>
 
           <!-- Language Toggle -->
           <div class="lang-toggle" id="lang-toggle" title="切換語言 / Switch Language">
@@ -241,6 +245,10 @@
            class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-lavender hover:bg-white/5 transition-colors">
           <i class="fas fa-book-open mr-2"></i> <span data-i18n="nav.journal">日誌</span>
         </a>
+        <a href="{% url 'color_palette:index' %}"
+           class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-blue hover:bg-white/5 transition-colors">
+          <i class="fas fa-palette mr-2"></i> <span data-i18n="nav.color_palette">調色盤</span>
+        </a>
         <div class="border-t border-white/5 pt-2 mt-2">
           {% if user.is_authenticated %}
           <span class="block px-3 py-1 text-xs text-gray-500"><i class="fas fa-user mr-1"></i>{{ user.username }}</span>
@@ -279,7 +287,7 @@
   <script>
     const I18N = {
       zh: {
-        'nav.home': '首頁', 'nav.deck_stats': '牌組統計', 'nav.journal': '日誌',
+        'nav.home': '首頁', 'nav.deck_stats': '牌組統計', 'nav.journal': '日誌', 'nav.color_palette': '調色盤',
         'nav.login': '登入', 'nav.logout': '登出', 'nav.language': '語言',
         'footer.built_with': '用', 'footer.built_suffix': '打造',
         'home.subtitle': '夢幻般的工具與專案集合。\n探索下方的模組開始使用。',
@@ -287,7 +295,15 @@
         'home.deck_stats_desc': '分析卡牌遊戲比賽的牌組分佈。輸入牌組代碼，生成精美的系列佔比圓餅圖。',
         'home.journal_title': '日誌',
         'home.journal_desc': '個人日誌與筆記。在時間牆上記錄想法、靈感與每日感想。',
+        'home.color_palette_title': '調色盤生成器',
+        'home.color_palette_desc': '選擇一個基礎色，自動生成互補色、類比色、三色組等多種配色方案。點擊色卡即可複製色碼。',
         'home.coming_soon': '敬請期待', 'home.coming_soon_desc': '新的模組和工具將會在此出現。',
+        'palette.title': '調色盤生成器', 'palette.base_color': '基礎色',
+        'palette.hex_placeholder': '輸入十六進位色碼...',
+        'palette.complementary': '互補色', 'palette.analogous': '類比色',
+        'palette.triadic': '三色組', 'palette.split_complementary': '分裂互補色',
+        'palette.monochromatic': '單色系', 'palette.copied': '已複製！',
+        'palette.tip': '點擊任意色卡即可複製色碼',
         'home.explore': '探索',
         'pie.title': '牌組分佈分析', 'pie.tournament_info': '比賽資訊',
         'pie.tournament_name': '比賽名稱', 'pie.date': '日期',
@@ -296,6 +312,8 @@
         'pie.empty_list': '尚未新增任何代碼。', 'pie.chart_title': '生成圖表',
         'pie.save': '儲存', 'pie.chart_placeholder': '圖表將在生成後顯示於此。',
         'pie.enter_name': '輸入比賽名稱...', 'pie.enter_code': '輸入牌組代碼...',
+        'pie.actions_col': '操作', 'pie.clear_all_confirm': '確定要清除所有代碼嗎？',
+        'pie.generating': '圖表生成中，請稍候...', 'pie.generating_btn': '生成中...',
         'journal.title': '日誌', 'journal.new_entry': '新增日誌',
         'journal.no_entries': '目前沒有日誌。',
         'journal.start_writing': '開始撰寫你的第一篇日誌。',
@@ -316,7 +334,7 @@
         'login.username_placeholder': '帳號', 'login.password_placeholder': '密碼',
       },
       en: {
-        'nav.home': 'Home', 'nav.deck_stats': 'Deck Stats', 'nav.journal': 'Journal',
+        'nav.home': 'Home', 'nav.deck_stats': 'Deck Stats', 'nav.journal': 'Journal', 'nav.color_palette': 'Color Palette',
         'nav.login': 'Login', 'nav.logout': 'Logout', 'nav.language': 'Language',
         'footer.built_with': 'Built with', 'footer.built_suffix': '',
         'home.subtitle': 'A dreamy collection of tools and projects.\nExplore the modules below to get started.',
@@ -324,7 +342,15 @@
         'home.deck_stats_desc': 'Analyze card game tournament deck distributions. Input deck codes, generate beautiful pie charts with series breakdown.',
         'home.journal_title': 'Journal',
         'home.journal_desc': 'Personal log and notes. Record thoughts, ideas, and daily reflections on a timeline wall.',
+        'home.color_palette_title': 'Color Palette Generator',
+        'home.color_palette_desc': 'Pick a base color and generate complementary, analogous, triadic, and more. Click any swatch to copy.',
         'home.coming_soon': 'Coming Soon', 'home.coming_soon_desc': 'New modules and tools will appear here as they are built. Stay tuned.',
+        'palette.title': 'Color Palette Generator', 'palette.base_color': 'Base Color',
+        'palette.hex_placeholder': 'Enter hex code...',
+        'palette.complementary': 'Complementary', 'palette.analogous': 'Analogous',
+        'palette.triadic': 'Triadic', 'palette.split_complementary': 'Split-Complementary',
+        'palette.monochromatic': 'Monochromatic', 'palette.copied': 'Copied!',
+        'palette.tip': 'Click any swatch to copy its hex code',
         'home.explore': 'Explore',
         'pie.title': 'Deck Distribution Analysis', 'pie.tournament_info': 'Tournament Info',
         'pie.tournament_name': 'Tournament Name', 'pie.date': 'Date',
@@ -333,6 +359,8 @@
         'pie.empty_list': 'No deck codes added yet.', 'pie.chart_title': 'Generated Chart',
         'pie.save': 'Save', 'pie.chart_placeholder': 'Chart will appear here after generation.',
         'pie.enter_name': 'Enter tournament name...', 'pie.enter_code': 'Enter deck code...',
+        'pie.actions_col': 'Actions', 'pie.clear_all_confirm': 'Clear all codes?',
+        'pie.generating': 'Generating chart...', 'pie.generating_btn': 'Generating...',
         'journal.title': 'Journal', 'journal.new_entry': 'New Entry',
         'journal.no_entries': 'No entries yet.',
         'journal.start_writing': 'Start writing your first journal entry.',

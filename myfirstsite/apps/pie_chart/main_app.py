@@ -228,6 +228,9 @@ def get_pie_chart(game_name, code):
     explode = [0.1 if count == max(sizes) else 0 for count in sizes]
 
     fig, ax = plt.subplots(figsize=(14, 12))
+    fig.set_facecolor('#1A1A2E')
+    ax.set_facecolor('#1A1A2E')
+
     wedges, texts, autotexts = ax.pie(
         sizes,
         labels=wrapped_labels,
@@ -236,7 +239,7 @@ def get_pie_chart(game_name, code):
         colors=colors,
         explode=explode,
         shadow={'ox': -0.004, 'oy': -0.004, 'shade': 0.4},
-        textprops={'fontsize': 50, 'fontweight': 'bold', 'fontproperties': font_prop},
+        textprops={'fontsize': 50, 'fontweight': 'bold', 'fontproperties': font_prop, 'color': '#E5E5E5'},
         labeldistance=1.3,
         pctdistance=0.6  # 讓百分比更靠近圓心
     )
@@ -244,9 +247,9 @@ def get_pie_chart(game_name, code):
     # --- 百分比標籤永遠在最上層 ---
     for autotext in autotexts:
         autotext.set_zorder(10)
-        autotext.set_bbox(dict(facecolor='white', edgecolor='none', boxstyle='round,pad=0.3', alpha=0.7))
+        autotext.set_bbox(dict(facecolor='#16213E', edgecolor='none', boxstyle='round,pad=0.3', alpha=0.7))
 
-    plt.title(game_title, fontweight='bold', fontproperties=font_prop, fontsize=40, pad=80)
+    plt.title(game_title, fontweight='bold', fontproperties=font_prop, fontsize=40, pad=80, color='#E5E5E5')
     plt.axis('equal')
 
     legend = plt.legend(
@@ -257,9 +260,13 @@ def get_pie_chart(game_name, code):
         ncol=2,
         prop=font_prop,
         borderaxespad=0.,
-        title_fontsize=18
+        title_fontsize=18,
+        facecolor='#16213E',
+        edgecolor='#FFFFFF22',
+        labelcolor='#E5E5E5',
     )
     legend.get_title().set_fontproperties(font_prop)
+    legend.get_title().set_color('#E5E5E5')
 
     # 計算 wedge 角度
     wedge_angles = []
@@ -301,15 +308,20 @@ def get_pie_chart(game_name, code):
 
     plt.tight_layout()
 
+    # 浮水印
+    fig.text(0.95, 0.02, 'sakanasa', fontsize=10, color='#FFFFFF', alpha=0.15,
+             ha='right', va='bottom', fontproperties=font_prop, style='italic')
+
     # 儲存到 media/charts
     media_dir = Path(settings.MEDIA_ROOT) / 'charts'
     os.makedirs(media_dir, exist_ok=True)
 
     filename = f"{game_name}.png"
     save_path = media_dir / filename
-    plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0.4)
+    plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0.4,
+                facecolor=fig.get_facecolor())
     buf = io.BytesIO()
-    plt.savefig(buf, format='png')
+    plt.savefig(buf, format='png', facecolor=fig.get_facecolor())
     buf.seek(0)
     plt.close()
 

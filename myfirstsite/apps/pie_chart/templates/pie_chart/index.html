@@ -68,9 +68,10 @@
                    hover:bg-cyrene-blue/30 transition-colors flex items-center justify-center shrink-0">
             <i class="fas fa-check"></i>
           </button>
-          <button type="button" id="deck_code_delete"
+          <button type="button" id="deck_code_clear_all"
             class="w-10 h-10 rounded-lg bg-cyrene-pink/20 text-cyrene-pink
-                   hover:bg-cyrene-pink/30 transition-colors flex items-center justify-center shrink-0">
+                   hover:bg-cyrene-pink/30 transition-colors flex items-center justify-center shrink-0"
+            title="Clear All">
             <i class="fas fa-trash"></i>
           </button>
         </div>
@@ -93,6 +94,7 @@
               <tr class="border-b border-white/10 text-gray-400 text-sm">
                 <th class="py-2 text-left px-2 w-16">#</th>
                 <th class="py-2 text-left px-2" data-i18n="pie.deck_code_col">牌組代碼</th>
+                <th class="py-2 text-center px-2 w-24" data-i18n="pie.actions_col">操作</th>
               </tr>
             </thead>
             <tbody id="code_list_body" class="text-gray-300 text-sm">
@@ -176,16 +178,71 @@
       addCode();
     });
 
-  // Delete button
+  // Clear All button
   document
-    .getElementById("deck_code_delete")
+    .getElementById("deck_code_clear_all")
     .addEventListener("click", function (event) {
       event.preventDefault();
       if (codeList.length > 0) {
-        codeList.pop();
-        renderTable();
+        const msg = (typeof t === 'function') ? t('pie.clear_all_confirm') : '確定要清除所有代碼嗎？';
+        if (confirm(msg)) {
+          codeList = [];
+          renderTable();
+        }
       }
     });
+
+  // Delete single code
+  function deleteCode(idx) {
+    codeList.splice(idx, 1);
+    renderTable();
+  }
+
+  // Edit code inline
+  function editCode(idx) {
+    const tbody = document.getElementById("code_list_body");
+    const row = tbody.children[idx];
+    if (!row) return;
+    const codeCell = row.children[1];
+    const actionsCell = row.children[2];
+    const oldValue = codeList[idx];
+
+    codeCell.innerHTML = `<input type="text" value="${oldValue.replace(/"/g, '&quot;')}"
+      class="w-full bg-white/10 border border-cyrene-blue/50 rounded px-2 py-1 text-white text-sm
+             focus:outline-none focus:border-cyrene-blue" id="edit-input-${idx}" />`;
+    actionsCell.innerHTML = `
+      <button onclick="confirmEdit(${idx})" class="text-green-400 hover:text-green-300 mr-1" title="Confirm">
+        <i class="fas fa-check text-xs"></i>
+      </button>
+      <button onclick="cancelEdit(${idx}, '${oldValue.replace(/'/g, "\\'")}')" class="text-gray-400 hover:text-gray-300" title="Cancel">
+        <i class="fas fa-times text-xs"></i>
+      </button>`;
+
+    const input = document.getElementById(`edit-input-${idx}`);
+    input.focus();
+    input.select();
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); confirmEdit(idx); }
+      if (e.key === 'Escape') { e.preventDefault(); cancelEdit(idx, oldValue); }
+    });
+  }
+
+  // Confirm edit
+  function confirmEdit(idx) {
+    const input = document.getElementById(`edit-input-${idx}`);
+    if (input) {
+      const newVal = input.value.trim();
+      if (newVal) {
+        codeList[idx] = newVal;
+      }
+    }
+    renderTable();
+  }
+
+  // Cancel edit
+  function cancelEdit(idx, oldValue) {
+    renderTable();
+  }
 
   // Render table
   function renderTable() {
@@ -200,7 +257,18 @@
     codeList.forEach((code, idx) => {
       const tr = document.createElement("tr");
       tr.className = "border-b border-white/5";
-      tr.innerHTML = `<td class="py-2 px-2 text-gray-500">${idx + 1}</td><td class="py-2 px-2">${code}</td>`;
+      const escaped = code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      tr.innerHTML = `
+        <td class="py-2 px-2 text-gray-500">${idx + 1}</td>
+        <td class="py-2 px-2">${escaped}</td>
+        <td class="py-2 px-2 text-center">
+          <button onclick="editCode(${idx})" class="text-cyrene-blue hover:text-blue-300 mr-1" title="Edit">
+            <i class="fas fa-pen text-xs"></i>
+          </button>
+          <button onclick="deleteCode(${idx})" class="text-cyrene-pink hover:text-pink-300" title="Delete">
+            <i class="fas fa-times text-xs"></i>
+          </button>
+        </td>`;
       tbody.appendChild(tr);
     });
   }

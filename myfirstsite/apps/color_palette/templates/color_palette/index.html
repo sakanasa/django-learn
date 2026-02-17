@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+
+{% block title %}Color Palette Generator{% endblock %}
+
+{% block extra_head %}
+<style>
+  .color-swatch {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+  }
+  .color-swatch:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  }
+  .color-swatch:active {
+    transform: scale(0.95);
+  }
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 100;
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  .scheme-enter {
+    opacity: 0;
+    transform: translateY(15px);
+    animation: scheme-fade-in 0.4s ease forwards;
+  }
+  .scheme-enter:nth-child(2) { animation-delay: 0.08s; }
+  .scheme-enter:nth-child(3) { animation-delay: 0.16s; }
+  .scheme-enter:nth-child(4) { animation-delay: 0.24s; }
+  .scheme-enter:nth-child(5) { animation-delay: 0.32s; }
+  @keyframes scheme-fade-in {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  input[type="color"] {
+    -webkit-appearance: none;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+  }
+  input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+  }
+  input[type="color"]::-webkit-color-swatch {
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Title -->
+<section class="text-center mb-10">
+  <h1 class="text-3xl sm:text-4xl font-display font-bold gradient-text inline-flex items-center gap-3">
+    <i class="fas fa-palette"></i>
+    <span data-i18n="palette.title">調色盤生成器</span>
+  </h1>
+</section>
+
+<!-- Base Color Picker Card -->
+<section class="max-w-xl mx-auto mb-10">
+  <div class="glass rounded-2xl p-6 card-glow">
+    <h2 class="text-lg font-display font-semibold text-white mb-4">
+      <i class="fas fa-eye-dropper text-cyrene-pink mr-2"></i>
+      <span data-i18n="palette.base_color">基礎色</span>
+    </h2>
+    <div class="flex items-center gap-4">
+      <input type="color" id="color-picker" value="#A8D8EA"
+             class="w-16 h-16 rounded-xl flex-shrink-0" />
+      <input type="text" id="hex-input" value="#A8D8EA"
+             maxlength="7"
+             data-i18n-placeholder="palette.hex_placeholder"
+             placeholder="輸入十六進位色碼..."
+             class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white
+                    font-mono text-lg focus:outline-none focus:border-cyrene-blue/50
+                    transition-colors" />
+    </div>
+    <!-- Preview Bar -->
+    <div id="preview-bar" class="mt-4 h-3 rounded-full transition-colors duration-300"
+         style="background-color: #A8D8EA;"></div>
+  </div>
+</section>
+
+<!-- Color Schemes -->
+<section id="schemes-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+</section>
+
+<!-- Tip -->
+<p class="text-center text-sm text-gray-500 mb-8">
+  <i class="fas fa-info-circle mr-1"></i>
+  <span data-i18n="palette.tip">點擊任意色卡即可複製色碼</span>
+</p>
+
+<!-- Toast -->
+<div id="copy-toast" class="toast glass px-5 py-3 rounded-xl text-sm font-medium text-cyrene-pink">
+  <i class="fas fa-check-circle mr-2"></i>
+  <span data-i18n="palette.copied">已複製！</span>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  // ===== Color Conversion Utilities =====
+  function hexToRgb(hex) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+    var r = parseInt(hex.substring(0, 2), 16);
+    var g = parseInt(hex.substring(2, 4), 16);
+    var b = parseInt(hex.substring(4, 6), 16);
+    return { r: r, g: g, b: b };
+  }
+
+  function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    var max = Math.max(r, g, b), min = Math.min(r, g, b);
+    var h, s, l = (max + min) / 2;
+    if (max === min) {
+      h = s = 0;
+    } else {
+      var d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+        case g: h = ((b - r) / d + 2) / 6; break;
+        case b: h = ((r - g) / d + 4) / 6; break;
+      }
+    }
+    return { h: h * 360, s: s * 100, l: l * 100 };
+  }
+
+  function hslToHex(h, s, l) {
+    h = ((h % 360) + 360) % 360;
+    s = Math.max(0, Math.min(100, s)) / 100;
+    l = Math.max(0, Math.min(100, l)) / 100;
+    var c = (1 - Math.abs(2 * l - 1)) * s;
+    var x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    var m = l - c / 2;
+    var r, g, b;
+    if (h < 60)      { r = c; g = x; b = 0; }
+    else if (h < 120) { r = x; g = c; b = 0; }
+    else if (h < 180) { r = 0; g = c; b = x; }
+    else if (h < 240) { r = 0; g = x; b = c; }
+    else if (h < 300) { r = x; g = 0; b = c; }
+    else              { r = c; g = 0; b = x; }
+    r = Math.round((r + m) * 255);
+    g = Math.round((g + m) * 255);
+    b = Math.round((b + m) * 255);
+    return '#' + [r, g, b].map(function(v) {
+      var hex = v.toString(16);
+      return hex.length === 1 ? '0' + hex : hex;
+    }).join('').toUpperCase();
+  }
+
+  // ===== Color Scheme Generators =====
+  function getSchemes(hex) {
+    var rgb = hexToRgb(hex);
+    var hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+    var h = hsl.h, s = hsl.s, l = hsl.l;
+
+    return [
+      {
+        nameKey: 'palette.complementary',
+        icon: 'fa-circle-half-stroke',
+        colors: [hex, hslToHex(h + 180, s, l)]
+      },
+      {
+        nameKey: 'palette.analogous',
+        icon: 'fa-sliders',
+        colors: [hslToHex(h - 30, s, l), hex, hslToHex(h + 30, s, l)]
+      },
+      {
+        nameKey: 'palette.triadic',
+        icon: 'fa-shapes',
+        colors: [hex, hslToHex(h + 120, s, l), hslToHex(h + 240, s, l)]
+      },
+      {
+        nameKey: 'palette.split_complementary',
+        icon: 'fa-code-branch',
+        colors: [hex, hslToHex(h + 150, s, l), hslToHex(h + 210, s, l)]
+      },
+      {
+        nameKey: 'palette.monochromatic',
+        icon: 'fa-layer-group',
+        colors: [
+          hslToHex(h, s, 20),
+          hslToHex(h, s, 35),
+          hslToHex(h, s, 50),
+          hslToHex(h, s, 65),
+          hslToHex(h, s, 80)
+        ]
+      }
+    ];
+  }
+
+  // ===== Rendering =====
+  var container = document.getElementById('schemes-container');
+
+  function renderSchemes(hex) {
+    var schemes = getSchemes(hex);
+    container.innerHTML = '';
+
+    schemes.forEach(function(scheme) {
+      var card = document.createElement('div');
+      card.className = 'scheme-enter glass rounded-2xl p-6 card-glow';
+
+      var label = t(scheme.nameKey);
+
+      var swatchesHtml = scheme.colors.map(function(color) {
+        var textColor = isLight(color) ? '#1A1A2E' : '#FFFFFF';
+        return '<div class="color-swatch flex flex-col items-center gap-2" data-color="' + color + '">' +
+          '<div class="w-full aspect-square rounded-xl shadow-lg" style="background-color:' + color + ';"></div>' +
+          '<span class="text-xs font-mono" style="color:' + textColor + '; -webkit-text-fill-color: unset; color: rgba(255,255,255,0.7);">' + color + '</span>' +
+        '</div>';
+      }).join('');
+
+      var gridCols = scheme.colors.length <= 3 ? 'grid-cols-' + scheme.colors.length : (scheme.colors.length === 5 ? 'grid-cols-5' : 'grid-cols-4');
+
+      card.innerHTML =
+        '<h3 class="text-base font-display font-semibold text-white mb-4 flex items-center gap-2">' +
+          '<i class="fas ' + scheme.icon + ' text-cyrene-blue"></i>' +
+          '<span data-i18n="' + scheme.nameKey + '">' + label + '</span>' +
+        '</h3>' +
+        '<div class="grid ' + gridCols + ' gap-3">' + swatchesHtml + '</div>';
+
+      container.appendChild(card);
+    });
+
+    // Attach click-to-copy
+    container.querySelectorAll('.color-swatch').forEach(function(swatch) {
+      swatch.addEventListener('click', function() {
+        var color = this.getAttribute('data-color');
+        copyToClipboard(color);
+      });
+    });
+  }
+
+  function isLight(hex) {
+    var rgb = hexToRgb(hex);
+    var luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+    return luminance > 0.6;
+  }
+
+  // ===== Copy to Clipboard =====
+  var toastEl = document.getElementById('copy-toast');
+  var toastTimer;
+
+  function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+      showToast();
+    }).catch(function() {
+      // Fallback
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast();
+    });
+  }
+
+  function showToast() {
+    clearTimeout(toastTimer);
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(function() {
+      toastEl.classList.remove('show');
+    }, 1500);
+  }
+
+  // ===== Sync Color Picker & Hex Input =====
+  var colorPicker = document.getElementById('color-picker');
+  var hexInput = document.getElementById('hex-input');
+  var previewBar = document.getElementById('preview-bar');
+
+  function updateFromPicker() {
+    var val = colorPicker.value.toUpperCase();
+    hexInput.value = val;
+    previewBar.style.backgroundColor = val;
+    renderSchemes(val);
+  }
+
+  function updateFromHex() {
+    var val = hexInput.value.trim();
+    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+      colorPicker.value = val;
+      previewBar.style.backgroundColor = val;
+      renderSchemes(val);
+    }
+  }
+
+  colorPicker.addEventListener('input', updateFromPicker);
+  hexInput.addEventListener('input', updateFromHex);
+
+  // ===== Language Change =====
+  document.addEventListener('langchange', function() {
+    renderSchemes(colorPicker.value);
+  });
+
+  // ===== Initial Render =====
+  renderSchemes(colorPicker.value);
+})();
+</script>
+{% endblock %}

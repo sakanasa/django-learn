@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'apps.pie_chart.apps.PieChartConfig',
     'apps.home_page.apps.HomePageConfig',
     'apps.journal.apps.JournalConfig',
+    'apps.color_palette.apps.ColorPaletteConfig',
 ]
 
 LOGIN_URL = '/login/'

@@ -32,6 +32,7 @@ urlpatterns = [
     path('pie_chart/', include(('pie_chart.urls', 'pie_chart'))),
     path('home_page/', include(('home_page.urls', 'home_page'))),
     path('journal/', include(('journal.urls', 'journal'))),
+    path('color_palette/', include(('color_palette.urls', 'color_palette'))),
     
     path('login/', auth_views.LoginView.as_view(template_name='auth/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
