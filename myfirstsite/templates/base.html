@@ -197,6 +197,10 @@
              class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-blue transition-colors">
             <i class="fas fa-palette mr-1"></i> <span data-i18n="nav.color_palette">調色盤</span>
           </a>
+          <a href="{% url 'pomodoro:index' %}"
+             class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-lavender transition-colors">
+            <i class="fas fa-clock mr-1"></i> <span data-i18n="nav.pomodoro">番茄鐘</span>
+          </a>
 
           <!-- Language Toggle -->
           <div class="lang-toggle" id="lang-toggle" title="切換語言 / Switch Language">
@@ -249,6 +253,10 @@
            class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-blue hover:bg-white/5 transition-colors">
           <i class="fas fa-palette mr-2"></i> <span data-i18n="nav.color_palette">調色盤</span>
         </a>
+        <a href="{% url 'pomodoro:index' %}"
+           class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-lavender hover:bg-white/5 transition-colors">
+          <i class="fas fa-clock mr-2"></i> <span data-i18n="nav.pomodoro">番茄鐘</span>
+        </a>
         <div class="border-t border-white/5 pt-2 mt-2">
           {% if user.is_authenticated %}
           <span class="block px-3 py-1 text-xs text-gray-500"><i class="fas fa-user mr-1"></i>{{ user.username }}</span>
@@ -287,7 +295,7 @@
   <script>
     const I18N = {
       zh: {
-        'nav.home': '首頁', 'nav.deck_stats': '牌組統計', 'nav.journal': '日誌', 'nav.color_palette': '調色盤',
+        'nav.home': '首頁', 'nav.deck_stats': '牌組統計', 'nav.journal': '日誌', 'nav.color_palette': '調色盤', 'nav.pomodoro': '番茄鐘',
         'nav.login': '登入', 'nav.logout': '登出', 'nav.language': '語言',
         'footer.built_with': '用', 'footer.built_suffix': '打造',
         'home.subtitle': '夢幻般的工具與專案集合。\n探索下方的模組開始使用。',
@@ -297,7 +305,14 @@
         'home.journal_desc': '個人日誌與筆記。在時間牆上記錄想法、靈感與每日感想。',
         'home.color_palette_title': '調色盤生成器',
         'home.color_palette_desc': '選擇一個基礎色，自動生成互補色、類比色、三色組等多種配色方案。點擊色卡即可複製色碼。',
+        'home.pomodoro_title': '番茄鐘計時器', 'home.pomodoro_desc': '25/5 分鐘番茄工作法計時器。自訂時長、音效提醒、專注次數統計，助你高效專注。',
         'home.coming_soon': '敬請期待', 'home.coming_soon_desc': '新的模組和工具將會在此出現。',
+        'pomo.title': '番茄鐘計時器', 'pomo.focus': '專注', 'pomo.short_break': '短休息', 'pomo.long_break': '長休息',
+        'pomo.start': '開始', 'pomo.pause': '暫停', 'pomo.reset': '重置', 'pomo.skip': '跳過',
+        'pomo.settings': '設定', 'pomo.focus_duration': '專注時長（分鐘）', 'pomo.short_duration': '短休息時長（分鐘）',
+        'pomo.long_duration': '長休息時長（分鐘）', 'pomo.long_interval': '長休息間隔',
+        'pomo.sound': '音效提示', 'pomo.stats': '今日統計', 'pomo.sessions': ' 次專注',
+        'pomo.total_time': '總專注時間', 'pomo.minutes_unit': '分鐘',
         'palette.title': '調色盤生成器', 'palette.base_color': '基礎色',
         'palette.hex_placeholder': '輸入十六進位色碼...',
         'palette.complementary': '互補色', 'palette.analogous': '類比色',
@@ -334,7 +349,7 @@
         'login.username_placeholder': '帳號', 'login.password_placeholder': '密碼',
       },
       en: {
-        'nav.home': 'Home', 'nav.deck_stats': 'Deck Stats', 'nav.journal': 'Journal', 'nav.color_palette': 'Color Palette',
+        'nav.home': 'Home', 'nav.deck_stats': 'Deck Stats', 'nav.journal': 'Journal', 'nav.color_palette': 'Color Palette', 'nav.pomodoro': 'Pomodoro',
         'nav.login': 'Login', 'nav.logout': 'Logout', 'nav.language': 'Language',
         'footer.built_with': 'Built with', 'footer.built_suffix': '',
         'home.subtitle': 'A dreamy collection of tools and projects.\nExplore the modules below to get started.',
@@ -344,7 +359,14 @@
         'home.journal_desc': 'Personal log and notes. Record thoughts, ideas, and daily reflections on a timeline wall.',
         'home.color_palette_title': 'Color Palette Generator',
         'home.color_palette_desc': 'Pick a base color and generate complementary, analogous, triadic, and more. Click any swatch to copy.',
+        'home.pomodoro_title': 'Pomodoro Timer', 'home.pomodoro_desc': '25/5 min Pomodoro technique timer. Custom durations, sound alerts, and focus session tracking.',
         'home.coming_soon': 'Coming Soon', 'home.coming_soon_desc': 'New modules and tools will appear here as they are built. Stay tuned.',
+        'pomo.title': 'Pomodoro Timer', 'pomo.focus': 'Focus', 'pomo.short_break': 'Short Break', 'pomo.long_break': 'Long Break',
+        'pomo.start': 'Start', 'pomo.pause': 'Pause', 'pomo.reset': 'Reset', 'pomo.skip': 'Skip',
+        'pomo.settings': 'Settings', 'pomo.focus_duration': 'Focus Duration (min)', 'pomo.short_duration': 'Short Break (min)',
+        'pomo.long_duration': 'Long Break (min)', 'pomo.long_interval': 'Long Break Interval',
+        'pomo.sound': 'Sound Alert', 'pomo.stats': "Today's Stats", 'pomo.sessions': ' sessions',
+        'pomo.total_time': 'Total Focus Time', 'pomo.minutes_unit': 'min',
         'palette.title': 'Color Palette Generator', 'palette.base_color': 'Base Color',
         'palette.hex_placeholder': 'Enter hex code...',
         'palette.complementary': 'Complementary', 'palette.analogous': 'Analogous',

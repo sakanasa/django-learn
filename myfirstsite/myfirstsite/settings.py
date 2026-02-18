@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'apps.home_page.apps.HomePageConfig',
     'apps.journal.apps.JournalConfig',
     'apps.color_palette.apps.ColorPaletteConfig',
+    'apps.pomodoro.apps.PomodoroConfig',
 ]
 
 LOGIN_URL = '/login/'

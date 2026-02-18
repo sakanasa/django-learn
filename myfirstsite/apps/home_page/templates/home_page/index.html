@@ -20,6 +20,7 @@
   .card-enter:nth-child(2) { animation-delay: 0.15s; }
   .card-enter:nth-child(3) { animation-delay: 0.3s; }
   .card-enter:nth-child(4) { animation-delay: 0.45s; }
+  .card-enter:nth-child(5) { animation-delay: 0.6s; }
   @keyframes card-fade-in {
     to { opacity: 1; transform: translateY(0); }
   }
@@ -97,6 +98,25 @@
     </div>
   </a>
 
+  <!-- Card: Pomodoro Timer -->
+  <a href="{% url 'pomodoro:index' %}"
+     class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
+    <div class="flex items-center gap-4 mb-4">
+      <div class="w-12 h-12 rounded-xl bg-cyrene-lavender/15 flex items-center justify-center">
+        <i class="fas fa-clock text-xl text-cyrene-lavender"></i>
+      </div>
+      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-lavender transition-colors"
+          data-i18n="home.pomodoro_title">番茄鐘計時器</h3>
+    </div>
+    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.pomodoro_desc">
+      25/5 分鐘番茄工作法計時器。自訂時長、音效提醒、專注次數統計，助你高效專注。
+    </p>
+    <div class="mt-6 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
+      <span data-i18n="home.explore">探索</span>
+      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+    </div>
+  </a>
+
   <!-- Card: Coming Soon Placeholder -->
   <div class="card-enter glass p-8 rounded-2xl border border-dashed border-white/10 opacity-50">
     <div class="flex items-center gap-4 mb-4">
@@ -117,8 +137,8 @@
 <script>
   // Typing animation - language aware
   const phrasesMap = {
-    zh: ['歡迎來到sakanasa的工坊', '牌組分析','心情日誌', '調色盤', '更多即將推出...'],
-    en: ['Welcome to Sakanasa Workshop', 'Deck Analytics','Journal', 'Color Palette', 'More Coming Soon...']
+    zh: ['歡迎來到sakanasa的工坊', '牌組分析','心情日誌', '調色盤', '番茄鐘', '更多即將推出...'],
+    en: ['Welcome to Sakanasa Workshop', 'Deck Analytics','Journal', 'Color Palette', 'Pomodoro', 'More Coming Soon...']
   };
   let phraseIndex = 0;
   let charIndex = 0;

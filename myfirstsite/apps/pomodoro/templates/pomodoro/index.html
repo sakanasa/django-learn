@@ -1,0 +1,574 @@
+{% extends "base.html" %}
+
+{% block title %}Pomodoro - Workshop{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Progress Ring */
+  .progress-ring-circle {
+    transition: stroke-dashoffset 0.5s ease;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+
+  /* Mode colors */
+  .mode-focus .progress-ring-circle { stroke: #F2A7C3; }
+  .mode-short .progress-ring-circle { stroke: #A8D8EA; }
+  .mode-long .progress-ring-circle { stroke: #C3ABE4; }
+
+  .mode-focus .timer-display { color: #F2A7C3; }
+  .mode-short .timer-display { color: #A8D8EA; }
+  .mode-long .timer-display { color: #C3ABE4; }
+
+  /* Tab active states */
+  .tab-btn { transition: all 0.3s ease; }
+  .tab-btn.active-focus {
+    background: rgba(242, 167, 195, 0.15);
+    border-color: rgba(242, 167, 195, 0.4);
+    color: #F2A7C3;
+  }
+  .tab-btn.active-short {
+    background: rgba(168, 216, 234, 0.15);
+    border-color: rgba(168, 216, 234, 0.4);
+    color: #A8D8EA;
+  }
+  .tab-btn.active-long {
+    background: rgba(195, 171, 228, 0.15);
+    border-color: rgba(195, 171, 228, 0.4);
+    color: #C3ABE4;
+  }
+
+  /* Control buttons */
+  .ctrl-btn {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: #e5e7eb;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  .ctrl-btn:hover {
+    background: rgba(255,255,255,0.1);
+    transform: scale(1.1);
+  }
+  .ctrl-btn-primary {
+    width: 64px; height: 64px;
+    font-size: 1.25rem;
+    background: linear-gradient(135deg, rgba(242,167,195,0.2), rgba(195,171,228,0.2));
+    border-color: rgba(242,167,195,0.3);
+  }
+  .ctrl-btn-primary:hover {
+    background: linear-gradient(135deg, rgba(242,167,195,0.3), rgba(195,171,228,0.3));
+  }
+
+  /* Settings toggle */
+  .settings-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+  .settings-content.open { max-height: 400px; }
+
+  /* Sound toggle */
+  .sound-toggle {
+    width: 44px; height: 24px; border-radius: 12px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer; position: relative; transition: background 0.3s;
+  }
+  .sound-toggle.on { background: rgba(242,167,195,0.3); border-color: rgba(242,167,195,0.4); }
+  .sound-toggle-knob {
+    position: absolute; top: 2px; left: 2px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #e5e7eb; transition: transform 0.3s;
+  }
+  .sound-toggle.on .sound-toggle-knob { transform: translateX(20px); }
+
+  /* Tomato icon animation */
+  .tomato-pop {
+    display: inline-block;
+    animation: pop-in 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  }
+  @keyframes pop-in {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Number input */
+  .num-input {
+    width: 80px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: #e5e7eb;
+    text-align: center;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .num-input:focus { border-color: rgba(242,167,195,0.4); }
+  .num-input::-webkit-inner-spin-button { opacity: 1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Title -->
+<div class="text-center mb-8">
+  <h1 class="text-3xl sm:text-4xl font-display font-bold gradient-text inline-flex items-center gap-3">
+    <i class="fas fa-clock"></i>
+    <span data-i18n="pomo.title">番茄鐘計時器</span>
+  </h1>
+</div>
+
+<!-- Timer Card -->
+<div class="max-w-md mx-auto mb-8">
+  <div class="glass rounded-2xl p-8 card-glow text-center" id="timer-card">
+
+    <!-- SVG Progress Ring -->
+    <div class="relative inline-block mb-6" id="ring-container">
+      <svg width="240" height="240" viewBox="0 0 240 240">
+        <!-- Background circle -->
+        <circle cx="120" cy="120" r="105" fill="none"
+                stroke="rgba(255,255,255,0.05)" stroke-width="8" />
+        <!-- Progress circle -->
+        <circle id="progress-ring" class="progress-ring-circle"
+                cx="120" cy="120" r="105" fill="none"
+                stroke-width="8" stroke-linecap="round"
+                stroke-dasharray="659.73" stroke-dashoffset="0" />
+      </svg>
+      <!-- Timer display centered on ring -->
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <span id="timer-display" class="timer-display text-5xl font-display font-bold tracking-wide">25:00</span>
+        <span id="mode-label" class="text-sm text-gray-400 mt-1" data-i18n="pomo.focus">專注</span>
+      </div>
+    </div>
+
+    <!-- Control Buttons -->
+    <div class="flex items-center justify-center gap-5">
+      <button id="btn-reset" class="ctrl-btn" title="Reset">
+        <i class="fas fa-stop"></i>
+      </button>
+      <button id="btn-start" class="ctrl-btn ctrl-btn-primary" title="Start / Pause">
+        <i id="start-icon" class="fas fa-play"></i>
+      </button>
+      <button id="btn-skip" class="ctrl-btn" title="Skip">
+        <i class="fas fa-forward"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Mode Tabs -->
+<div class="max-w-md mx-auto mb-8 flex justify-center gap-3">
+  <button class="tab-btn px-5 py-2 rounded-xl text-sm font-medium border border-transparent active-focus"
+          data-mode="focus" data-i18n="pomo.focus">專注</button>
+  <button class="tab-btn px-5 py-2 rounded-xl text-sm font-medium border border-transparent text-gray-400"
+          data-mode="short" data-i18n="pomo.short_break">短休息</button>
+  <button class="tab-btn px-5 py-2 rounded-xl text-sm font-medium border border-transparent text-gray-400"
+          data-mode="long" data-i18n="pomo.long_break">長休息</button>
+</div>
+
+<!-- Settings Card -->
+<div class="max-w-md mx-auto mb-8">
+  <div class="glass rounded-2xl overflow-hidden">
+    <button id="settings-toggle"
+            class="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-white/5 transition-colors">
+      <span class="flex items-center gap-2 text-sm font-medium text-gray-300">
+        <i class="fas fa-cog"></i>
+        <span data-i18n="pomo.settings">設定</span>
+      </span>
+      <i id="settings-chevron" class="fas fa-chevron-down text-xs text-gray-500 transition-transform"></i>
+    </button>
+    <div id="settings-content" class="settings-content px-6">
+      <div class="pb-5 space-y-4">
+        <!-- Focus duration -->
+        <div class="flex items-center justify-between">
+          <label class="text-sm text-gray-400" data-i18n="pomo.focus_duration">專注時長（分鐘）</label>
+          <input type="number" id="set-focus" class="num-input" value="25" min="1" max="120" />
+        </div>
+        <!-- Short break duration -->
+        <div class="flex items-center justify-between">
+          <label class="text-sm text-gray-400" data-i18n="pomo.short_duration">短休息時長（分鐘）</label>
+          <input type="number" id="set-short" class="num-input" value="5" min="1" max="60" />
+        </div>
+        <!-- Long break duration -->
+        <div class="flex items-center justify-between">
+          <label class="text-sm text-gray-400" data-i18n="pomo.long_duration">長休息時長（分鐘）</label>
+          <input type="number" id="set-long" class="num-input" value="15" min="1" max="60" />
+        </div>
+        <!-- Long break interval -->
+        <div class="flex items-center justify-between">
+          <label class="text-sm text-gray-400" data-i18n="pomo.long_interval">長休息間隔</label>
+          <input type="number" id="set-interval" class="num-input" value="4" min="1" max="20" />
+        </div>
+        <!-- Sound toggle -->
+        <div class="flex items-center justify-between">
+          <label class="text-sm text-gray-400" data-i18n="pomo.sound">音效提示</label>
+          <div id="sound-toggle" class="sound-toggle on">
+            <div class="sound-toggle-knob"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stats Card -->
+<div class="max-w-md mx-auto mb-16">
+  <div class="glass rounded-2xl p-6 card-glow">
+    <h3 class="text-sm font-medium text-gray-300 mb-4 flex items-center gap-2">
+      <i class="fas fa-chart-bar"></i>
+      <span data-i18n="pomo.stats">今日統計</span>
+    </h3>
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="flex items-center gap-1 mb-1">
+          <span id="tomato-icons" class="text-lg"></span>
+        </div>
+        <p class="text-sm text-gray-400">
+          <span id="session-count" class="text-white font-semibold">0</span>
+          <span data-i18n="pomo.sessions"> 次專注</span>
+        </p>
+      </div>
+      <div class="text-right">
+        <p class="text-2xl font-display font-bold text-white"><span id="total-minutes">0</span></p>
+        <p class="text-sm text-gray-400" data-i18n="pomo.total_time">總專注時間</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  // ===== Constants & State =====
+  const CIRCUMFERENCE = 2 * Math.PI * 105; // ~659.73
+  const modes = { focus: 'focus', short: 'short', long: 'long' };
+
+  let currentMode = modes.focus;
+  let totalSeconds = 25 * 60;
+  let remainingSeconds = totalSeconds;
+  let timerInterval = null;
+  let isRunning = false;
+  let sessionsCompleted = 0;
+  let soundEnabled = true;
+
+  // Settings
+  let focusDuration = 25;
+  let shortDuration = 5;
+  let longDuration = 15;
+  let longInterval = 4;
+
+  // DOM
+  const timerCard = document.getElementById('timer-card');
+  const ringContainer = document.getElementById('ring-container');
+  const progressRing = document.getElementById('progress-ring');
+  const timerDisplay = document.getElementById('timer-display');
+  const modeLabel = document.getElementById('mode-label');
+  const btnStart = document.getElementById('btn-start');
+  const startIcon = document.getElementById('start-icon');
+  const btnReset = document.getElementById('btn-reset');
+  const btnSkip = document.getElementById('btn-skip');
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const settingsToggle = document.getElementById('settings-toggle');
+  const settingsContent = document.getElementById('settings-content');
+  const settingsChevron = document.getElementById('settings-chevron');
+  const soundToggle = document.getElementById('sound-toggle');
+  const sessionCountEl = document.getElementById('session-count');
+  const totalMinutesEl = document.getElementById('total-minutes');
+  const tomatoIconsEl = document.getElementById('tomato-icons');
+
+  const setFocusInput = document.getElementById('set-focus');
+  const setShortInput = document.getElementById('set-short');
+  const setLongInput = document.getElementById('set-long');
+  const setIntervalInput = document.getElementById('set-interval');
+
+  // ===== localStorage Stats =====
+  function getTodayKey() {
+    const d = new Date();
+    return 'pomo_' + d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  function loadStats() {
+    const key = getTodayKey();
+    const data = JSON.parse(localStorage.getItem(key) || '{"sessions":0,"minutes":0}');
+    sessionsCompleted = data.sessions;
+    updateStatsUI();
+  }
+
+  function saveStats(addMinutes) {
+    const key = getTodayKey();
+    const data = JSON.parse(localStorage.getItem(key) || '{"sessions":0,"minutes":0}');
+    data.sessions++;
+    data.minutes += addMinutes;
+    localStorage.setItem(key, JSON.stringify(data));
+    sessionsCompleted = data.sessions;
+    updateStatsUI();
+  }
+
+  function getStats() {
+    const key = getTodayKey();
+    return JSON.parse(localStorage.getItem(key) || '{"sessions":0,"minutes":0}');
+  }
+
+  function updateStatsUI() {
+    const stats = getStats();
+    sessionCountEl.textContent = stats.sessions;
+    totalMinutesEl.textContent = stats.minutes;
+    // Render tomato icons
+    let tomatoes = '';
+    for (let i = 0; i < stats.sessions; i++) {
+      tomatoes += '<span class="tomato-pop">🍅</span>';
+    }
+    tomatoIconsEl.innerHTML = tomatoes || '<span class="text-gray-600">🍅</span>';
+  }
+
+  // ===== Timer Logic =====
+  function getDurationForMode(mode) {
+    if (mode === modes.focus) return focusDuration * 60;
+    if (mode === modes.short) return shortDuration * 60;
+    return longDuration * 60;
+  }
+
+  function switchMode(mode, autoStart) {
+    stopTimer();
+    currentMode = mode;
+    totalSeconds = getDurationForMode(mode);
+    remainingSeconds = totalSeconds;
+    updateDisplay();
+    updateRing();
+    updateModeUI();
+    if (autoStart) startTimer();
+  }
+
+  function updateDisplay() {
+    const m = Math.floor(remainingSeconds / 60);
+    const s = remainingSeconds % 60;
+    const display = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    timerDisplay.textContent = display;
+    // Update browser title
+    const modeText = getModeText();
+    document.title = '(' + display + ') ' + modeText + ' - Workshop';
+  }
+
+  function getModeText() {
+    const lang = getLang();
+    if (currentMode === modes.focus) return lang === 'zh' ? '專注中' : 'Focus';
+    if (currentMode === modes.short) return lang === 'zh' ? '短休息' : 'Short Break';
+    return lang === 'zh' ? '長休息' : 'Long Break';
+  }
+
+  function updateRing() {
+    const progress = remainingSeconds / totalSeconds;
+    const offset = CIRCUMFERENCE * (1 - progress);
+    progressRing.style.strokeDashoffset = offset;
+  }
+
+  function updateModeUI() {
+    // Card class for color theming
+    ringContainer.className = 'relative inline-block mb-6 mode-' + currentMode;
+
+    // Tab buttons
+    tabBtns.forEach(function(btn) {
+      btn.classList.remove('active-focus', 'active-short', 'active-long');
+      btn.classList.add('text-gray-400');
+      if (btn.dataset.mode === currentMode) {
+        btn.classList.remove('text-gray-400');
+        btn.classList.add('active-' + currentMode);
+      }
+    });
+
+    // Mode label
+    const i18nKey = currentMode === modes.focus ? 'pomo.focus'
+                  : currentMode === modes.short ? 'pomo.short_break'
+                  : 'pomo.long_break';
+    modeLabel.setAttribute('data-i18n', i18nKey);
+    modeLabel.textContent = t(i18nKey);
+  }
+
+  function startTimer() {
+    if (isRunning) return;
+    isRunning = true;
+    startIcon.className = 'fas fa-pause';
+    timerInterval = setInterval(tick, 1000);
+  }
+
+  function stopTimer() {
+    isRunning = false;
+    startIcon.className = 'fas fa-play';
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  }
+
+  function tick() {
+    remainingSeconds--;
+    if (remainingSeconds < 0) {
+      onTimerEnd();
+      return;
+    }
+    updateDisplay();
+    updateRing();
+  }
+
+  function onTimerEnd() {
+    stopTimer();
+    if (soundEnabled) playBeep();
+    sendNotification();
+
+    if (currentMode === modes.focus) {
+      // Save stats
+      saveStats(focusDuration);
+      // Decide next break
+      const stats = getStats();
+      if (stats.sessions % longInterval === 0) {
+        switchMode(modes.long, true);
+      } else {
+        switchMode(modes.short, true);
+      }
+    } else {
+      // Break ended → back to focus
+      switchMode(modes.focus, true);
+    }
+  }
+
+  function resetTimer() {
+    stopTimer();
+    remainingSeconds = totalSeconds;
+    updateDisplay();
+    updateRing();
+  }
+
+  function skipToNext() {
+    stopTimer();
+    if (currentMode === modes.focus) {
+      const stats = getStats();
+      if ((stats.sessions + 1) % longInterval === 0) {
+        switchMode(modes.long, false);
+      } else {
+        switchMode(modes.short, false);
+      }
+    } else {
+      switchMode(modes.focus, false);
+    }
+  }
+
+  // ===== Sound (Web Audio API) =====
+  function playBeep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      // Play 3 short beeps
+      [0, 0.2, 0.4].forEach(function(delay) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 830;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.3, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delay + 0.15);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.15);
+      });
+    } catch(e) {}
+  }
+
+  // ===== Notification API =====
+  function sendNotification() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+      return;
+    }
+    if (Notification.permission !== 'granted') return;
+
+    const lang = getLang();
+    let title, body;
+    if (currentMode === modes.focus) {
+      title = lang === 'zh' ? '專注結束！' : 'Focus Complete!';
+      body = lang === 'zh' ? '休息一下吧 🍅' : 'Time for a break 🍅';
+    } else {
+      title = lang === 'zh' ? '休息結束！' : 'Break Over!';
+      body = lang === 'zh' ? '開始下一個專注 💪' : 'Start your next focus session 💪';
+    }
+    new Notification(title, { body: body, icon: '🍅' });
+  }
+
+  // ===== Event Listeners =====
+
+  // Start / Pause
+  btnStart.addEventListener('click', function() {
+    // Request notification permission on first interaction
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+    if (isRunning) { stopTimer(); } else { startTimer(); }
+  });
+
+  // Reset
+  btnReset.addEventListener('click', resetTimer);
+
+  // Skip
+  btnSkip.addEventListener('click', skipToNext);
+
+  // Mode tabs
+  tabBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      switchMode(btn.dataset.mode, false);
+    });
+  });
+
+  // Settings toggle
+  settingsToggle.addEventListener('click', function() {
+    settingsContent.classList.toggle('open');
+    settingsChevron.style.transform = settingsContent.classList.contains('open') ? 'rotate(180deg)' : '';
+  });
+
+  // Sound toggle
+  soundToggle.addEventListener('click', function() {
+    soundEnabled = !soundEnabled;
+    soundToggle.classList.toggle('on', soundEnabled);
+  });
+
+  // Settings inputs
+  function onSettingsChange() {
+    focusDuration = Math.max(1, Math.min(120, parseInt(setFocusInput.value) || 25));
+    shortDuration = Math.max(1, Math.min(60, parseInt(setShortInput.value) || 5));
+    longDuration = Math.max(1, Math.min(60, parseInt(setLongInput.value) || 15));
+    longInterval = Math.max(1, Math.min(20, parseInt(setIntervalInput.value) || 4));
+
+    // If timer isn't running, update the current mode's total
+    if (!isRunning) {
+      totalSeconds = getDurationForMode(currentMode);
+      remainingSeconds = totalSeconds;
+      updateDisplay();
+      updateRing();
+    }
+  }
+
+  setFocusInput.addEventListener('change', onSettingsChange);
+  setShortInput.addEventListener('change', onSettingsChange);
+  setLongInput.addEventListener('change', onSettingsChange);
+  setIntervalInput.addEventListener('change', onSettingsChange);
+
+  // Language change
+  document.addEventListener('langchange', function() {
+    updateModeUI();
+    updateDisplay();
+  });
+
+  // ===== Init =====
+  loadStats();
+  updateModeUI();
+  updateDisplay();
+  updateRing();
+
+  // Reset title on page unload
+  window.addEventListener('beforeunload', function() {
+    document.title = "Pomodoro - Workshop";
+  });
+})();
+</script>
+{% endblock %}
