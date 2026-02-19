@@ -201,6 +201,10 @@
              class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-lavender transition-colors">
             <i class="fas fa-clock mr-1"></i> <span data-i18n="nav.pomodoro">番茄鐘</span>
           </a>
+          <a href="{% url 'deck_analysis:index' %}"
+             class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-pink transition-colors">
+            <i class="fas fa-brain mr-1"></i> <span data-i18n="nav.deck_ai">牌組AI分析</span>
+          </a>
 
           <!-- Language Toggle -->
           <div class="lang-toggle" id="lang-toggle" title="切換語言 / Switch Language">
@@ -257,6 +261,10 @@
            class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-lavender hover:bg-white/5 transition-colors">
           <i class="fas fa-clock mr-2"></i> <span data-i18n="nav.pomodoro">番茄鐘</span>
         </a>
+        <a href="{% url 'deck_analysis:index' %}"
+           class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-pink hover:bg-white/5 transition-colors">
+          <i class="fas fa-brain mr-2"></i> <span data-i18n="nav.deck_ai">牌組AI分析</span>
+        </a>
         <div class="border-t border-white/5 pt-2 mt-2">
           {% if user.is_authenticated %}
           <span class="block px-3 py-1 text-xs text-gray-500"><i class="fas fa-user mr-1"></i>{{ user.username }}</span>
@@ -295,7 +303,7 @@
   <script>
     const I18N = {
       zh: {
-        'nav.home': '首頁', 'nav.deck_stats': '牌組統計', 'nav.journal': '日誌', 'nav.color_palette': '調色盤', 'nav.pomodoro': '番茄鐘',
+        'nav.home': '首頁', 'nav.deck_stats': '牌組統計', 'nav.journal': '日誌', 'nav.color_palette': '調色盤', 'nav.pomodoro': '番茄鐘', 'nav.deck_ai': '牌組AI分析',
         'nav.login': '登入', 'nav.logout': '登出', 'nav.language': '語言',
         'footer.built_with': '用', 'footer.built_suffix': '打造',
         'home.subtitle': '夢幻般的工具與專案集合。\n探索下方的模組開始使用。',
@@ -306,6 +314,17 @@
         'home.color_palette_title': '調色盤生成器',
         'home.color_palette_desc': '選擇一個基礎色，自動生成互補色、類比色、三色組等多種配色方案。點擊色卡即可複製色碼。',
         'home.pomodoro_title': '番茄鐘計時器', 'home.pomodoro_desc': '25/5 分鐘番茄工作法計時器。自訂時長、音效提醒、專注次數統計，助你高效專注。',
+        'home.deck_ai_title': '牌組 AI 分析', 'home.deck_ai_desc': '輸入 decklog 牌組代碼，AI 自動爬取卡牌清單並進行 Weiß Schwarz 策略分析。',
+        'deck_ai.title': '牌組 AI 分析', 'deck_ai.subtitle': '輸入 decklog 牌組代碼，AI 將自動爬取卡牌清單並進行策略分析。',
+        'deck_ai.input_title': '輸入牌組代碼', 'deck_ai.input_placeholder': '例如：X8SA',
+        'deck_ai.input_hint': '從 decklog-en.bushiroad.com 取得牌組代碼，例如 URL 中的 /view/XXXXX',
+        'deck_ai.analyze_btn': '開始分析', 'deck_ai.analyzing_btn': '分析中...',
+        'deck_ai.ollama_online': 'LLM 伺服器連線正常', 'deck_ai.ollama_offline': 'LLM 伺服器離線 — 分析功能可能無法使用',
+        'deck_ai.model_ready': '模型已就緒', 'deck_ai.model_missing': '目標模型未載入',
+        'deck_ai.loading_title': 'AI 分析中...', 'deck_ai.loading_scraping': '正在爬取牌組資料...',
+        'deck_ai.loading_analyzing': 'AI 正在分析牌組策略...', 'deck_ai.loading_time_hint': '首次分析可能需要 1-2 分鐘（模型載入 + 生成）',
+        'deck_ai.series': '系列', 'deck_ai.code': '代碼', 'deck_ai.analysis_title': '策略分析',
+        'deck_ai.error_empty': '請輸入牌組代碼',
         'home.coming_soon': '敬請期待', 'home.coming_soon_desc': '新的模組和工具將會在此出現。',
         'pomo.title': '番茄鐘計時器', 'pomo.focus': '專注', 'pomo.short_break': '短休息', 'pomo.long_break': '長休息',
         'pomo.start': '開始', 'pomo.pause': '暫停', 'pomo.reset': '重置', 'pomo.skip': '跳過',
@@ -349,7 +368,7 @@
         'login.username_placeholder': '帳號', 'login.password_placeholder': '密碼',
       },
       en: {
-        'nav.home': 'Home', 'nav.deck_stats': 'Deck Stats', 'nav.journal': 'Journal', 'nav.color_palette': 'Color Palette', 'nav.pomodoro': 'Pomodoro',
+        'nav.home': 'Home', 'nav.deck_stats': 'Deck Stats', 'nav.journal': 'Journal', 'nav.color_palette': 'Color Palette', 'nav.pomodoro': 'Pomodoro', 'nav.deck_ai': 'Deck AI',
         'nav.login': 'Login', 'nav.logout': 'Logout', 'nav.language': 'Language',
         'footer.built_with': 'Built with', 'footer.built_suffix': '',
         'home.subtitle': 'A dreamy collection of tools and projects.\nExplore the modules below to get started.',
@@ -360,6 +379,17 @@
         'home.color_palette_title': 'Color Palette Generator',
         'home.color_palette_desc': 'Pick a base color and generate complementary, analogous, triadic, and more. Click any swatch to copy.',
         'home.pomodoro_title': 'Pomodoro Timer', 'home.pomodoro_desc': '25/5 min Pomodoro technique timer. Custom durations, sound alerts, and focus session tracking.',
+        'home.deck_ai_title': 'Deck AI Analysis', 'home.deck_ai_desc': 'Enter a decklog deck code. AI scrapes the card list and provides Weiß Schwarz strategic analysis.',
+        'deck_ai.title': 'Deck AI Analysis', 'deck_ai.subtitle': 'Enter a decklog deck code. AI will scrape the card list and analyze deck strategy.',
+        'deck_ai.input_title': 'Enter Deck Code', 'deck_ai.input_placeholder': 'e.g. X8SA',
+        'deck_ai.input_hint': 'Get deck code from decklog-en.bushiroad.com, e.g. /view/XXXXX',
+        'deck_ai.analyze_btn': 'Analyze', 'deck_ai.analyzing_btn': 'Analyzing...',
+        'deck_ai.ollama_online': 'LLM server connected', 'deck_ai.ollama_offline': 'LLM server offline — analysis may be unavailable',
+        'deck_ai.model_ready': 'Model ready', 'deck_ai.model_missing': 'Target model not loaded',
+        'deck_ai.loading_title': 'AI Analyzing...', 'deck_ai.loading_scraping': 'Scraping deck data...',
+        'deck_ai.loading_analyzing': 'AI is analyzing deck strategy...', 'deck_ai.loading_time_hint': 'First analysis may take 1-2 minutes (model loading + generation)',
+        'deck_ai.series': 'Series', 'deck_ai.code': 'Code', 'deck_ai.analysis_title': 'Strategic Analysis',
+        'deck_ai.error_empty': 'Please enter a deck code',
         'home.coming_soon': 'Coming Soon', 'home.coming_soon_desc': 'New modules and tools will appear here as they are built. Stay tuned.',
         'pomo.title': 'Pomodoro Timer', 'pomo.focus': 'Focus', 'pomo.short_break': 'Short Break', 'pomo.long_break': 'Long Break',
         'pomo.start': 'Start', 'pomo.pause': 'Pause', 'pomo.reset': 'Reset', 'pomo.skip': 'Skip',

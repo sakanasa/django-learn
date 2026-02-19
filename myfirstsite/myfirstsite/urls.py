@@ -34,7 +34,8 @@ urlpatterns = [
     path('journal/', include(('journal.urls', 'journal'))),
     path('color_palette/', include(('color_palette.urls', 'color_palette'))),
     path('pomodoro/', include(('pomodoro.urls', 'pomodoro'))),
-    
+    path('deck_analysis/', include(('deck_analysis.urls', 'deck_analysis'))),
+
     path('login/', auth_views.LoginView.as_view(template_name='auth/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
     path('', RedirectView.as_view(url='/home_page/', permanent=True)),

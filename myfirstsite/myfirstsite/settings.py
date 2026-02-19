@@ -32,6 +32,13 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'http://localhost',
+    'http://127.0.0.1',
+]
+
 
 # Application definition
 
@@ -48,7 +55,12 @@ INSTALLED_APPS = [
     'apps.journal.apps.JournalConfig',
     'apps.color_palette.apps.ColorPaletteConfig',
     'apps.pomodoro.apps.PomodoroConfig',
+    'apps.deck_analysis.apps.DeckAnalysisConfig',
 ]
+
+# Ollama LLM settings (Mac Studio via Tailscale)
+OLLAMA_BASE_URL = 'http://100.94.135.11:11434'
+OLLAMA_MODEL = 'qwen2.5:72b-instruct-q4_K_M'
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/home_page/'
