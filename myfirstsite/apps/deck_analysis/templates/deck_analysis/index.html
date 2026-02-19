@@ -275,11 +275,11 @@
       }
     }, 10000);
 
-    try {
-      // Read CSRF token from hidden input or cookie
-      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value
-        || document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+    // Read CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value
+      || document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
 
+    try {
       const formData = new FormData();
       formData.append('deck_code', deckCode);
 

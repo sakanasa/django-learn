@@ -27,7 +27,6 @@ def analyze(request):
         return JsonResponse({'error': 'Please provide a deck code.'}, status=400)
 
     try:
-        # Step 1: Scrape deck data
         deck_data = scrape_deck_simple(deck_code)
 
         if not deck_data.get('series_name') and not deck_data.get('cards'):
@@ -35,7 +34,6 @@ def analyze(request):
                 'error': f'Could not find deck with code "{deck_code}". Please check the code and try again.'
             }, status=404)
 
-        # Step 2: Call LLM for analysis
         analysis = analyze_deck(deck_data)
 
         return JsonResponse({

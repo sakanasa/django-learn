@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'apps.color_palette.apps.ColorPaletteConfig',
     'apps.pomodoro.apps.PomodoroConfig',
     'apps.deck_analysis.apps.DeckAnalysisConfig',
+    'apps.deck_showcase.apps.DeckShowcaseConfig',
 ]
 
 # Ollama LLM settings (Mac Studio via Tailscale)

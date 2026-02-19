@@ -1,0 +1,749 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Deck Showcase - Workshop{% endblock %}
+
+{% block extra_head %}
+<style>
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+  }
+  .card-item {
+    position: relative;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 3px solid transparent;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  }
+  .card-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(242, 167, 195, 0.2);
+  }
+  .card-item.selected {
+    border-color: #F2A7C3;
+    box-shadow: 0 0 12px rgba(242, 167, 195, 0.4);
+  }
+  .card-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .card-check {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #F2A7C3;
+    color: #1A1A2E;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+  .card-item.selected .card-check {
+    display: flex;
+  }
+  .card-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    padding: 1.5rem 0.375rem 0.25rem;
+    font-size: 0.625rem;
+    color: #d1d5db;
+    line-height: 1.2;
+    text-align: center;
+    pointer-events: none;
+  }
+  .card-count-badge {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: rgba(26, 26, 46, 0.85);
+    color: #A8D8EA;
+    font-size: 0.625rem;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 4px;
+    pointer-events: none;
+  }
+  .rarity-badge {
+    position: absolute;
+    bottom: 22px;
+    right: 4px;
+    background: rgba(26, 26, 46, 0.9);
+    color: #F2A7C3;
+    font-size: 0.5625rem;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 3px;
+    pointer-events: none;
+    letter-spacing: 0.5px;
+  }
+
+  /* Arrangement strip */
+  .arrangement-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    min-height: 70px;
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px dashed rgba(255,255,255,0.1);
+  }
+  .arrangement-strip:empty::after {
+    content: '';
+    display: none;
+  }
+  .arr-card {
+    position: relative;
+    width: 52px;
+    cursor: grab;
+    border-radius: 0.375rem;
+    overflow: hidden;
+    border: 2px solid transparent;
+    transition: border-color 0.2s, transform 0.15s;
+    flex-shrink: 0;
+  }
+  .arr-card:active {
+    cursor: grabbing;
+  }
+  .arr-card.center-card {
+    border-color: #F2A7C3;
+    box-shadow: 0 0 8px rgba(242, 167, 195, 0.5);
+  }
+  .arr-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+    pointer-events: none;
+  }
+  .arr-card .center-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #F2A7C3;
+    color: #1A1A2E;
+    font-size: 0.5rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 1px 0;
+    letter-spacing: 0.5px;
+  }
+  .arr-card .arr-rarity {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    background: rgba(26, 26, 46, 0.9);
+    color: #A8D8EA;
+    font-size: 0.5rem;
+    font-weight: 600;
+    padding: 0 3px;
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .arr-card .arr-remove {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    background: rgba(220, 50, 50, 0.85);
+    color: white;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 0 0.25rem 0 0.25rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .arr-card:hover .arr-remove {
+    opacity: 1;
+  }
+  .arr-card.drag-over {
+    transform: scale(1.08);
+    border-color: #A8D8EA;
+  }
+
+  .cx-strip {
+    cursor: default;
+  }
+  .cx-strip .arr-card {
+    cursor: default;
+    width: 64px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+
+  <!-- Header -->
+  <h1 class="text-3xl font-display font-bold gradient-text mb-2">
+    <i class="fas fa-image mr-3"></i><span data-i18n="deck_showcase.title">牌組展示圖</span>
+  </h1>
+  <p class="text-gray-400 text-sm mb-8" data-i18n="deck_showcase.subtitle">
+    選擇想展示的卡牌，生成精美的扇形展示圖。
+  </p>
+
+  <!-- Input -->
+  <div class="glass p-6 rounded-2xl mb-6">
+    {% csrf_token %}
+    <h2 class="text-lg font-semibold text-cyrene-blue mb-4">
+      <i class="fas fa-search mr-2"></i><span data-i18n="deck_showcase.input_title">輸入牌組代碼</span>
+    </h2>
+    <div class="flex items-center gap-3">
+      <input type="text" id="deck_code_input"
+        class="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3
+               text-white placeholder-gray-500 text-lg tracking-wider
+               focus:outline-none focus:border-cyrene-blue focus:ring-1 focus:ring-cyrene-blue/50
+               transition-colors"
+        data-i18n-placeholder="deck_showcase.input_placeholder"
+        placeholder="例如：X8SA" />
+      <button type="button" id="load_btn"
+        class="px-6 py-3 rounded-lg font-semibold text-white
+               bg-gradient-to-r from-cyrene-pink via-cyrene-lavender to-cyrene-blue
+               hover:opacity-90 transition-opacity whitespace-nowrap">
+        <i class="fas fa-download mr-2"></i><span data-i18n="deck_showcase.load_btn">載入牌組</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div id="error_display" class="hidden glass rounded-xl p-4 mb-6 border border-cyrene-pink/30 text-cyrene-pink text-sm">
+    <i class="fas fa-exclamation-circle mr-2"></i><span id="error_text"></span>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading_display" class="hidden">
+    <div class="glass p-8 rounded-2xl text-center mb-6">
+      <i class="fas fa-spinner fa-spin text-3xl text-cyrene-lavender mb-2"></i>
+      <p class="text-sm text-gray-400" data-i18n="deck_showcase.loading">正在載入牌組...</p>
+    </div>
+  </div>
+
+  <!-- Card Selection -->
+  <div id="card_selection" class="hidden mb-6">
+    <div class="glass p-6 rounded-2xl">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <h2 class="text-lg font-semibold text-cyrene-lavender">
+          <i class="fas fa-hand-pointer mr-2"></i>
+          <span data-i18n="deck_showcase.select_title">選擇卡牌</span>
+          <span id="series_label" class="text-sm font-normal text-gray-400 ml-2"></span>
+        </h2>
+        <div class="flex items-center gap-3">
+          <span id="selected_count" class="text-sm text-cyrene-pink font-medium"></span>
+          <button type="button" id="select_all_btn"
+            class="px-3 py-1 rounded-lg text-xs font-medium text-white bg-white/10 hover:bg-white/20 transition-colors">
+            <span data-i18n="deck_showcase.select_all">全選</span>
+          </button>
+          <button type="button" id="clear_all_btn"
+            class="px-3 py-1 rounded-lg text-xs font-medium text-white bg-white/10 hover:bg-white/20 transition-colors">
+            <span data-i18n="deck_showcase.clear_all">清除</span>
+          </button>
+        </div>
+      </div>
+      <div id="card_grid" class="card-grid"></div>
+
+      <!-- Arrangement Strip -->
+      <div id="arrangement_section" class="hidden mt-6">
+        <h3 class="text-sm font-semibold text-cyrene-blue mb-2">
+          <i class="fas fa-arrows-alt mr-1"></i>
+          <span data-i18n="deck_showcase.arrangement_char">角色/事件卡排列</span>
+          <span class="text-xs font-normal text-gray-500 ml-2" data-i18n="deck_showcase.arrangement_hint">（拖拽調整順序，中間為主角）</span>
+        </h3>
+        <div id="char_strip" class="arrangement-strip mb-3"></div>
+
+        <div id="cx_strip_section" class="hidden">
+          <h3 class="text-sm font-semibold text-cyrene-blue mb-2">
+            <i class="fas fa-bolt mr-1"></i>
+            <span data-i18n="deck_showcase.arrangement_cx">CX 卡</span>
+          </h3>
+          <div id="cx_strip" class="arrangement-strip cx-strip"></div>
+        </div>
+      </div>
+
+      <!-- Player Info (Change 3) -->
+      <div id="player_info_section" class="hidden mt-6">
+        <h3 class="text-sm font-semibold text-cyrene-blue mb-2">
+          <i class="fas fa-user mr-1"></i>
+          <span data-i18n="deck_showcase.player_info">玩家資訊</span>
+          <span class="text-xs font-normal text-gray-500 ml-2" data-i18n="deck_showcase.player_info_hint">（選填，會顯示在展示圖底部）</span>
+        </h3>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <input type="text" id="player_name_input" maxlength="20"
+            class="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2
+                   text-white placeholder-gray-500 text-sm
+                   focus:outline-none focus:border-cyrene-blue focus:ring-1 focus:ring-cyrene-blue/50
+                   transition-colors"
+            data-i18n-placeholder="deck_showcase.player_name_placeholder"
+            placeholder="玩家名稱（最多20字）" />
+          <input type="text" id="player_message_input" maxlength="40"
+            class="flex-[2] bg-white/5 border border-white/10 rounded-lg px-3 py-2
+                   text-white placeholder-gray-500 text-sm
+                   focus:outline-none focus:border-cyrene-blue focus:ring-1 focus:ring-cyrene-blue/50
+                   transition-colors"
+            data-i18n-placeholder="deck_showcase.player_message_placeholder"
+            placeholder="一句話留言（最多40字）" />
+        </div>
+      </div>
+
+      <!-- Generate Button -->
+      <div class="mt-6 text-center">
+        <button type="button" id="generate_btn" disabled
+          class="px-8 py-3 rounded-lg font-semibold text-white
+                 bg-gradient-to-r from-cyrene-pink via-cyrene-lavender to-cyrene-blue
+                 hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed">
+          <i class="fas fa-wand-magic-sparkles mr-2"></i><span data-i18n="deck_showcase.generate_btn">生成展示圖</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generating spinner -->
+  <div id="generating_display" class="hidden">
+    <div class="glass p-8 rounded-2xl text-center mb-6">
+      <i class="fas fa-spinner fa-spin text-3xl text-cyrene-lavender mb-2"></i>
+      <p class="text-sm text-gray-400" data-i18n="deck_showcase.generating">正在生成展示圖...</p>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div id="result_section" class="hidden mb-6">
+    <div class="glass p-4 rounded-2xl">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-semibold text-cyrene-lavender">
+          <i class="fas fa-image mr-2"></i><span data-i18n="deck_showcase.result_title">展示圖</span>
+        </h2>
+        <button type="button" id="download_btn"
+          class="px-4 py-1.5 rounded-lg text-sm font-medium text-white
+                 bg-white/10 hover:bg-white/20 transition-colors">
+          <i class="fas fa-download mr-1"></i><span data-i18n="deck_showcase.download">下載</span>
+        </button>
+      </div>
+      <img id="result_image" class="w-full rounded-lg" alt="Deck Showcase" />
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const loadBtn = document.getElementById('load_btn');
+  const deckCodeInput = document.getElementById('deck_code_input');
+  const errorDisplay = document.getElementById('error_display');
+  const errorText = document.getElementById('error_text');
+  const loadingDisplay = document.getElementById('loading_display');
+  const cardSelection = document.getElementById('card_selection');
+  const cardGrid = document.getElementById('card_grid');
+  const seriesLabel = document.getElementById('series_label');
+  const selectedCount = document.getElementById('selected_count');
+  const selectAllBtn = document.getElementById('select_all_btn');
+  const clearAllBtn = document.getElementById('clear_all_btn');
+  const generateBtn = document.getElementById('generate_btn');
+  const generatingDisplay = document.getElementById('generating_display');
+  const resultSection = document.getElementById('result_section');
+  const resultImage = document.getElementById('result_image');
+  const downloadBtn = document.getElementById('download_btn');
+  const arrangementSection = document.getElementById('arrangement_section');
+  const charStrip = document.getElementById('char_strip');
+  const cxStripSection = document.getElementById('cx_strip_section');
+  const cxStrip = document.getElementById('cx_strip');
+  const playerInfoSection = document.getElementById('player_info_section');
+  const playerNameInput = document.getElementById('player_name_input');
+  const playerMessageInput = document.getElementById('player_message_input');
+
+  let allCards = [];
+  // Ordered arrays instead of Set
+  let selectedCharCards = [];  // {card_number, card_name, img_url, rare, level, card_type}
+  let selectedCxCards = [];
+  let currentDeckCode = '';
+
+  function getCSRF() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value
+      || document.cookie.split('; ').find(r => r.startsWith('csrftoken='))?.split('=')[1];
+  }
+
+  function showError(msg) {
+    errorText.textContent = msg;
+    errorDisplay.classList.remove('hidden');
+  }
+
+  function hideError() {
+    errorDisplay.classList.add('hidden');
+  }
+
+  function isCx(card) {
+    return card.level === 'CX';
+  }
+
+  function totalSelected() {
+    return selectedCharCards.length + selectedCxCards.length;
+  }
+
+  function isSelected(cardNumber) {
+    return selectedCharCards.some(c => c.card_number === cardNumber)
+        || selectedCxCards.some(c => c.card_number === cardNumber);
+  }
+
+  function updateSelectedCount() {
+    const n = totalSelected();
+    const lang = (typeof getLang === 'function') ? getLang() : 'zh';
+    if (lang === 'en') {
+      selectedCount.textContent = n > 0 ? `${n} selected` : '';
+    } else {
+      selectedCount.textContent = n > 0 ? `已選 ${n} 張` : '';
+    }
+    generateBtn.disabled = n === 0;
+
+    // Show/hide arrangement section and player info
+    if (n > 0) {
+      arrangementSection.classList.remove('hidden');
+      playerInfoSection.classList.remove('hidden');
+    } else {
+      arrangementSection.classList.add('hidden');
+      playerInfoSection.classList.add('hidden');
+    }
+  }
+
+  function findCardData(cardNumber) {
+    return allCards.find(c => c.card_number === cardNumber);
+  }
+
+  function toggleCard(cardNumber) {
+    const card = findCardData(cardNumber);
+    if (!card) return;
+
+    if (isSelected(cardNumber)) {
+      // Remove
+      selectedCharCards = selectedCharCards.filter(c => c.card_number !== cardNumber);
+      selectedCxCards = selectedCxCards.filter(c => c.card_number !== cardNumber);
+    } else {
+      // Add
+      if (isCx(card)) {
+        selectedCxCards.push(card);
+      } else {
+        selectedCharCards.push(card);
+      }
+    }
+
+    // Update grid item highlight
+    const el = document.querySelector(`[data-card="${CSS.escape(cardNumber)}"]`);
+    if (el) {
+      el.classList.toggle('selected', isSelected(cardNumber));
+    }
+    updateSelectedCount();
+    renderArrangementStrips();
+  }
+
+  function renderGrid(cards) {
+    cardGrid.innerHTML = '';
+    cards.forEach(card => {
+      const div = document.createElement('div');
+      div.className = 'card-item';
+      div.setAttribute('data-card', card.card_number);
+      if (isSelected(card.card_number)) {
+        div.classList.add('selected');
+      }
+
+      let rarityHtml = '';
+      if (card.rare) {
+        rarityHtml = `<div class="rarity-badge">${card.rare}</div>`;
+      }
+
+      div.innerHTML = `
+        <div class="card-check"><i class="fas fa-check"></i></div>
+        <div class="card-count-badge">&times;${card.count}</div>
+        ${rarityHtml}
+        <img src="${card.img_url}" alt="${card.card_name}" loading="lazy" />
+        <div class="card-label">${card.card_name}</div>
+      `;
+
+      div.addEventListener('click', () => toggleCard(card.card_number));
+      cardGrid.appendChild(div);
+    });
+  }
+
+  /* ========= Arrangement Strip ========= */
+
+  function getCenterIndex(arr) {
+    if (arr.length === 0) return -1;
+    return Math.floor((arr.length - 1) / 2);
+  }
+
+  function renderArrangementStrips() {
+    renderCharStrip();
+    renderCxStrip();
+  }
+
+  function renderCharStrip() {
+    charStrip.innerHTML = '';
+    const centerIdx = getCenterIndex(selectedCharCards);
+
+    selectedCharCards.forEach((card, idx) => {
+      const div = document.createElement('div');
+      div.className = 'arr-card';
+      div.draggable = true;
+      div.setAttribute('data-arr-idx', idx);
+
+      if (idx === centerIdx) {
+        div.classList.add('center-card');
+      }
+
+      let centerHtml = idx === centerIdx ? '<div class="center-label">CENTER</div>' : '';
+      let rarityHtml = card.rare ? `<div class="arr-rarity">${card.rare}</div>` : '';
+
+      div.innerHTML = `
+        ${centerHtml}
+        <img src="${card.img_url}" alt="${card.card_name}" />
+        ${rarityHtml}
+        <div class="arr-remove" title="移除">&times;</div>
+      `;
+
+      // Remove button
+      div.querySelector('.arr-remove').addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectedCharCards.splice(idx, 1);
+        const el = document.querySelector(`[data-card="${CSS.escape(card.card_number)}"]`);
+        if (el) el.classList.remove('selected');
+        updateSelectedCount();
+        renderArrangementStrips();
+      });
+
+      // Drag and drop
+      div.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', idx.toString());
+        e.dataTransfer.effectAllowed = 'move';
+        div.style.opacity = '0.5';
+      });
+      div.addEventListener('dragend', () => {
+        div.style.opacity = '1';
+        charStrip.querySelectorAll('.arr-card').forEach(el => el.classList.remove('drag-over'));
+      });
+      div.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        div.classList.add('drag-over');
+      });
+      div.addEventListener('dragleave', () => {
+        div.classList.remove('drag-over');
+      });
+      div.addEventListener('drop', (e) => {
+        e.preventDefault();
+        div.classList.remove('drag-over');
+        const fromIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        const toIdx = idx;
+        if (fromIdx !== toIdx && !isNaN(fromIdx)) {
+          const [moved] = selectedCharCards.splice(fromIdx, 1);
+          selectedCharCards.splice(toIdx, 0, moved);
+          renderArrangementStrips();
+        }
+      });
+
+      charStrip.appendChild(div);
+    });
+  }
+
+  function renderCxStrip() {
+    cxStrip.innerHTML = '';
+    if (selectedCxCards.length === 0) {
+      cxStripSection.classList.add('hidden');
+      return;
+    }
+    cxStripSection.classList.remove('hidden');
+
+    selectedCxCards.forEach((card, idx) => {
+      const div = document.createElement('div');
+      div.className = 'arr-card';
+
+      let rarityHtml = card.rare ? `<div class="arr-rarity">${card.rare}</div>` : '';
+
+      div.innerHTML = `
+        <img src="${card.img_url}" alt="${card.card_name}" />
+        ${rarityHtml}
+        <div class="arr-remove" title="移除">&times;</div>
+      `;
+
+      div.querySelector('.arr-remove').addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectedCxCards.splice(idx, 1);
+        const el = document.querySelector(`[data-card="${CSS.escape(card.card_number)}"]`);
+        if (el) el.classList.remove('selected');
+        updateSelectedCount();
+        renderArrangementStrips();
+      });
+
+      cxStrip.appendChild(div);
+    });
+  }
+
+  /* ========= Load Deck ========= */
+
+  async function loadDeck() {
+    const deckCode = deckCodeInput.value.trim();
+    if (!deckCode) {
+      showError(t('deck_showcase.error_empty') || '請輸入牌組代碼');
+      return;
+    }
+
+    hideError();
+    cardSelection.classList.add('hidden');
+    resultSection.classList.add('hidden');
+    loadingDisplay.classList.remove('hidden');
+    loadBtn.disabled = true;
+
+    try {
+      const formData = new FormData();
+      formData.append('deck_code', deckCode);
+
+      const resp = await fetch('{% url "deck_showcase:showcase_cards" %}', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCSRF() },
+        body: formData,
+      });
+
+      const data = await resp.json();
+
+      if (data.error) {
+        showError(data.error);
+        loadingDisplay.classList.add('hidden');
+        loadBtn.disabled = false;
+        return;
+      }
+
+      currentDeckCode = data.deck_code;
+      allCards = data.cards || [];
+      selectedCharCards = [];
+      selectedCxCards = [];
+      seriesLabel.textContent = data.series_name || '';
+
+      renderGrid(allCards);
+      updateSelectedCount();
+      renderArrangementStrips();
+
+      loadingDisplay.classList.add('hidden');
+      cardSelection.classList.remove('hidden');
+
+    } catch (err) {
+      showError('Network error: ' + err.message);
+      loadingDisplay.classList.add('hidden');
+    } finally {
+      loadBtn.disabled = false;
+    }
+  }
+
+  /* ========= Select All / Clear All ========= */
+
+  selectAllBtn.addEventListener('click', () => {
+    selectedCharCards = [];
+    selectedCxCards = [];
+    allCards.forEach(c => {
+      if (isCx(c)) {
+        selectedCxCards.push(c);
+      } else {
+        selectedCharCards.push(c);
+      }
+    });
+    document.querySelectorAll('.card-item').forEach(el => el.classList.add('selected'));
+    updateSelectedCount();
+    renderArrangementStrips();
+  });
+
+  clearAllBtn.addEventListener('click', () => {
+    selectedCharCards = [];
+    selectedCxCards = [];
+    document.querySelectorAll('.card-item').forEach(el => el.classList.remove('selected'));
+    updateSelectedCount();
+    renderArrangementStrips();
+  });
+
+  /* ========= Generate ========= */
+
+  async function generateShowcase() {
+    if (totalSelected() === 0) return;
+
+    hideError();
+    generatingDisplay.classList.remove('hidden');
+    resultSection.classList.add('hidden');
+    generateBtn.disabled = true;
+
+    try {
+      const formData = new FormData();
+      formData.append('deck_code', currentDeckCode);
+      // Send char cards first (in arrangement order), then CX cards
+      selectedCharCards.forEach(c => formData.append('selected_cards[]', c.card_number));
+      selectedCxCards.forEach(c => formData.append('selected_cards[]', c.card_number));
+
+      // Player info
+      const playerName = playerNameInput.value.trim();
+      const playerMessage = playerMessageInput.value.trim();
+      if (playerName) formData.append('player_name', playerName);
+      if (playerMessage) formData.append('player_message', playerMessage);
+
+      const resp = await fetch('{% url "deck_showcase:showcase_generate" %}', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCSRF() },
+        body: formData,
+      });
+
+      if (!resp.ok) {
+        let errMsg = `Server error (${resp.status})`;
+        try {
+          const errData = await resp.json();
+          if (errData.error) errMsg = errData.error;
+        } catch (_) {}
+        throw new Error(errMsg);
+      }
+
+      const blob = await resp.blob();
+      const imageUrl = URL.createObjectURL(blob);
+
+      resultImage.src = imageUrl;
+      generatingDisplay.classList.add('hidden');
+      resultSection.classList.remove('hidden');
+
+      // Download button
+      downloadBtn.onclick = () => {
+        const a = document.createElement('a');
+        a.href = imageUrl;
+        a.download = `deck_${currentDeckCode}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      };
+
+      resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    } catch (err) {
+      showError(err.message);
+      generatingDisplay.classList.add('hidden');
+    } finally {
+      generateBtn.disabled = totalSelected() === 0;
+    }
+  }
+
+  loadBtn.addEventListener('click', loadDeck);
+  generateBtn.addEventListener('click', generateShowcase);
+
+  deckCodeInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      loadDeck();
+    }
+  });
+</script>
+{% endblock %}
