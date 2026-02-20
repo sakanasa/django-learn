@@ -88,6 +88,26 @@ def showcase_generate(request):
     if source not in VALID_SOURCES:
         source = 'decklog_en'
 
+    # Read background parameters
+    bg_type = request.POST.get('bg_type', 'tech').strip()
+    bg_blur = int(request.POST.get('bg_blur', '0'))
+
+    bg_tech_overlay = request.POST.get('bg_tech_overlay', '1') == '1'
+    bg_params = {
+        'type': bg_type, 'blur': bg_blur,
+        'tech_overlay': bg_tech_overlay,
+    }
+
+    if bg_type == 'solid':
+        bg_params['color'] = request.POST.get('bg_color', '#1a1a2e')
+    elif bg_type == 'gradient':
+        bg_params['color1'] = request.POST.get('bg_color1', '#1a1a2e')
+        bg_params['color2'] = request.POST.get('bg_color2', '#0f3460')
+        bg_params['direction'] = request.POST.get('bg_direction', 'horizontal')
+    elif bg_type == 'image':
+        if 'bg_image' in request.FILES:
+            bg_params['image_file'] = request.FILES['bg_image']
+
     try:
         deck_data = scrape_deck(deck_code, source=source, merge_alts=False)
 
@@ -110,6 +130,8 @@ def showcase_generate(request):
             selected_cards, deck_data,
             player_name=player_name,
             player_message=player_message,
+            bg_params=bg_params,
+            source=source,
         )
 
         response = HttpResponse(png_bytes, content_type='image/png')

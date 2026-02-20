@@ -27,6 +27,13 @@ _FONT_PATHS = [
     '/System/Library/Fonts/Helvetica.ttc',
 ]
 
+# Source labels for bottom-right display
+SOURCE_LABELS = {
+    'decklog_en': 'Decklog EN',
+    'decklog_jp': 'Decklog JP',
+    'bottleneko': 'Bottleneko',
+}
+
 
 def _load_font(size):
     """Load a font with CJK fallback chain."""
@@ -91,6 +98,89 @@ def _count_deck_colors(cards):
     if not counts:
         return 'blue'  # fallback
     return counts.most_common(1)[0][0]
+
+
+def _hex_to_rgb(hex_color):
+    """Convert hex color to RGB tuple."""
+    hex_color = hex_color.lstrip('#')
+    return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+
+
+def _create_solid_background(color_hex, blur=0):
+    """Create a solid color background with optional blur."""
+    rgb = _hex_to_rgb(color_hex)
+    canvas = Image.new('RGBA', (CANVAS_W, CANVAS_H), (*rgb, 255))
+    if blur > 0:
+        canvas = canvas.filter(ImageFilter.GaussianBlur(blur))
+    return canvas
+
+
+def _create_gradient_background(color1_hex, color2_hex, direction='horizontal', blur=0):
+    """Create a gradient background."""
+    rgb1 = _hex_to_rgb(color1_hex)
+    rgb2 = _hex_to_rgb(color2_hex)
+    canvas = Image.new('RGBA', (CANVAS_W, CANVAS_H), (0, 0, 0, 255))
+    draw = ImageDraw.Draw(canvas)
+
+    if direction == 'horizontal':
+        for x in range(CANVAS_W):
+            ratio = x / CANVAS_W
+            r = int(rgb1[0] + (rgb2[0] - rgb1[0]) * ratio)
+            g = int(rgb1[1] + (rgb2[1] - rgb1[1]) * ratio)
+            b = int(rgb1[2] + (rgb2[2] - rgb1[2]) * ratio)
+            draw.line([(x, 0), (x, CANVAS_H)], fill=(r, g, b, 255))
+    elif direction == 'vertical':
+        for y in range(CANVAS_H):
+            ratio = y / CANVAS_H
+            r = int(rgb1[0] + (rgb2[0] - rgb1[0]) * ratio)
+            g = int(rgb1[1] + (rgb2[1] - rgb1[1]) * ratio)
+            b = int(rgb1[2] + (rgb2[2] - rgb1[2]) * ratio)
+            draw.line([(0, y), (CANVAS_W, y)], fill=(r, g, b, 255))
+    else:  # diagonal
+        for y in range(CANVAS_H):
+            for x in range(CANVAS_W):
+                ratio = (x + y) / (CANVAS_W + CANVAS_H)
+                r = int(rgb1[0] + (rgb2[0] - rgb1[0]) * ratio)
+                g = int(rgb1[1] + (rgb2[1] - rgb1[1]) * ratio)
+                b = int(rgb1[2] + (rgb2[2] - rgb1[2]) * ratio)
+                draw.point((x, y), fill=(r, g, b, 255))
+
+    if blur > 0:
+        canvas = canvas.filter(ImageFilter.GaussianBlur(blur))
+    return canvas
+
+
+def _create_image_background(image_file, blur=0):
+    """Create a background from uploaded image."""
+    try:
+        img = Image.open(image_file).convert('RGBA')
+        # Resize/crop to canvas size (cover mode)
+        img_ratio = img.width / img.height
+        canvas_ratio = CANVAS_W / CANVAS_H
+
+        if img_ratio > canvas_ratio:
+            # Image wider than canvas, crop width
+            new_h = CANVAS_H
+            new_w = int(new_h * img_ratio)
+        else:
+            # Image taller than canvas, crop height
+            new_w = CANVAS_W
+            new_h = int(new_w / img_ratio)
+
+        img = img.resize((new_w, new_h), Image.LANCZOS)
+
+        # Crop to canvas size (center)
+        left = (new_w - CANVAS_W) // 2
+        top = (new_h - CANVAS_H) // 2
+        img = img.crop((left, top, left + CANVAS_W, top + CANVAS_H))
+
+        if blur > 0:
+            img = img.filter(ImageFilter.GaussianBlur(blur))
+
+        return img
+    except Exception:
+        # Fallback to solid color if image fails
+        return _create_solid_background('#1a1a2e', blur)
 
 
 def _create_tech_background(dominant_color='blue'):
@@ -161,19 +251,44 @@ def _create_tech_background(dominant_color='blue'):
     for x, y in [(m1, m1), (CANVAS_W - m1, m1), (m1, CANVAS_H - m1), (CANVAS_W - m1, CANVAS_H - m1)]:
         draw.ellipse([x - dot_r, y - dot_r, x + dot_r, y + dot_r], fill=dot_color)
 
-    # 6. Scan lines (horizontal, faint)
-    scan_overlay = Image.new('RGBA', (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
-    s_draw = ImageDraw.Draw(scan_overlay)
-    for y in range(0, CANVAS_H, 4):
-        s_draw.line([(0, y), (CANVAS_W, y)], fill=(*accent, 8))
-    canvas = Image.alpha_composite(canvas, scan_overlay)
+    return canvas
 
-    # 7. Vertical accent lines at 1/4 and 3/4
-    line_overlay = Image.new('RGBA', (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
-    l_draw = ImageDraw.Draw(line_overlay)
-    for x_pos in [CANVAS_W // 4, 3 * CANVAS_W // 4]:
-        l_draw.line([(x_pos, m2 + 10), (x_pos, CANVAS_H - m2 - 10)], fill=(*accent, 15), width=1)
-    canvas = Image.alpha_composite(canvas, line_overlay)
+
+def _create_tech_overlay():
+    """Create a transparent tech-frame overlay with pure black lines."""
+    canvas = Image.new('RGBA', (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(canvas)
+
+    # Double-frame border (pure black)
+    m1 = 16
+    m2 = 24
+    draw.rectangle(
+        [m1, m1, CANVAS_W - m1, CANVAS_H - m1],
+        outline=(0, 0, 0, 90), width=3,
+    )
+    draw.rectangle(
+        [m2, m2, CANVAS_W - m2, CANVAS_H - m2],
+        outline=(0, 0, 0, 60), width=2,
+    )
+
+    # Corner L-decorations (pure black)
+    corner_len = 40
+    corner_color = (0, 0, 0, 130)
+    corners = [
+        ((m1, m1), (m1 + corner_len, m1), (m1, m1 + corner_len)),
+        ((CANVAS_W - m1, m1), (CANVAS_W - m1 - corner_len, m1), (CANVAS_W - m1, m1 + corner_len)),
+        ((m1, CANVAS_H - m1), (m1 + corner_len, CANVAS_H - m1), (m1, CANVAS_H - m1 - corner_len)),
+        ((CANVAS_W - m1, CANVAS_H - m1), (CANVAS_W - m1 - corner_len, CANVAS_H - m1), (CANVAS_W - m1, CANVAS_H - m1 - corner_len)),
+    ]
+    for corner_pt, h_end, v_end in corners:
+        draw.line([corner_pt, h_end], fill=corner_color, width=4)
+        draw.line([corner_pt, v_end], fill=corner_color, width=4)
+
+    # Corner dots (pure black)
+    dot_r = 4
+    dot_color = (0, 0, 0, 150)
+    for x, y in [(m1, m1), (CANVAS_W - m1, m1), (m1, CANVAS_H - m1), (CANVAS_W - m1, CANVAS_H - m1)]:
+        draw.ellipse([x - dot_r, y - dot_r, x + dot_r, y + dot_r], fill=dot_color)
 
     return canvas
 
@@ -181,30 +296,6 @@ def _create_tech_background(dominant_color='blue'):
 # ============================================================
 # Card rendering helpers
 # ============================================================
-
-def _add_drop_shadow(card_img, offset=8, blur_radius=15):
-    """Add a drop shadow behind a card image."""
-    shadow = Image.new('RGBA',
-                       (card_img.width + blur_radius * 2 + offset,
-                        card_img.height + blur_radius * 2 + offset),
-                       (0, 0, 0, 0))
-    shadow_layer = Image.new('RGBA', card_img.size, (0, 0, 0, 180))
-    shadow.paste(shadow_layer, (blur_radius + offset, blur_radius + offset), card_img)
-    shadow = shadow.filter(ImageFilter.GaussianBlur(blur_radius))
-    shadow.paste(card_img, (blur_radius, blur_radius), card_img)
-    return shadow
-
-
-def _add_glow(card_img, color=(180, 130, 255), radius=8):
-    """Add a subtle glow around the card."""
-    glow_size = (card_img.width + radius * 4, card_img.height + radius * 4)
-    glow = Image.new('RGBA', glow_size, (0, 0, 0, 0))
-    glow_layer = Image.new('RGBA', card_img.size, (*color, 60))
-    glow.paste(glow_layer, (radius * 2, radius * 2), card_img)
-    glow = glow.filter(ImageFilter.GaussianBlur(radius * 2))
-    glow.paste(card_img, (radius * 2, radius * 2), card_img)
-    return glow
-
 
 def _rotate_and_paste(canvas, card_img, center_x, center_y, angle):
     """Rotate a card image and paste it onto the canvas at the given center position."""
@@ -282,7 +373,7 @@ def _compute_fan_params(n):
 
 
 def _render_fan(canvas, card_imgs, center_x, center_y, center_idx):
-    """Render character/event cards in a fan spread (arch-down orientation)."""
+    """Render character/event cards in a fan spread (arch-down)."""
     n = len(card_imgs)
     if n == 0:
         return
@@ -297,12 +388,6 @@ def _render_fan(canvas, card_imgs, center_x, center_y, center_idx):
         s = scales[i]
         if s != 1.0:
             img = img.resize((int(img.width * s), int(img.height * s)), Image.LANCZOS)
-
-        # Center card gets glow, others get shadow
-        if i == center_idx or n == 1:
-            img = _add_glow(img, color=(242, 167, 195), radius=6)
-        else:
-            img = _add_drop_shadow(img, offset=5, blur_radius=10)
 
         cx = center_x + offsets_x[i]
         cy = center_y + offsets_y[i]
@@ -321,10 +406,9 @@ def _render_cx_row(canvas, card_imgs, center_x, center_y):
 
     cur_x = start_x
     for img in card_imgs:
-        img_with_shadow = _add_drop_shadow(img, offset=4, blur_radius=8)
-        paste_x = cur_x - (img_with_shadow.width - img.width) // 2
-        paste_y = center_y - img_with_shadow.height // 2
-        canvas.paste(img_with_shadow, (paste_x, paste_y), img_with_shadow)
+        paste_x = cur_x
+        paste_y = center_y - img.height // 2
+        canvas.paste(img, (paste_x, paste_y), img)
         cur_x += img.width + spacing
 
 
@@ -333,12 +417,17 @@ def _render_cx_row(canvas, card_imgs, center_x, center_y):
 # ============================================================
 
 def generate_showcase_image(selected_cards, deck_data,
-                            player_name='', player_message=''):
+                            player_name='', player_message='',
+                            bg_params=None, source=''):
     """
-    Generate a deck showcase image with arch-down fan, tech-frame background,
+    Generate a deck showcase image with arch-down fan, customizable background,
     and optional player info.
     """
-    # Determine dominant color from selected cards
+    # Default background parameters
+    if bg_params is None:
+        bg_params = {'type': 'tech', 'blur': 0}
+
+    # Determine dominant color from selected cards (for tech background)
     dominant_color = _count_deck_colors(selected_cards)
 
     # Collect image paths
@@ -379,22 +468,40 @@ def generate_showcase_image(selected_cards, deck_data,
     if not char_imgs and not cx_imgs:
         return _generate_placeholder(deck_data)
 
-    # Create canvas with tech-frame background
-    canvas = _create_tech_background(dominant_color)
+    # Create canvas with customizable background
+    bg_type = bg_params.get('type', 'solid')
+    blur = bg_params.get('blur', 0)
+
+    if bg_type == 'gradient':
+        color1 = bg_params.get('color1', '#1a1a2e')
+        color2 = bg_params.get('color2', '#0f3460')
+        direction = bg_params.get('direction', 'horizontal')
+        canvas = _create_gradient_background(color1, color2, direction, blur)
+    elif bg_type == 'image':
+        image_file = bg_params.get('image_file')
+        canvas = _create_image_background(image_file, blur)
+    else:  # solid (default)
+        color = bg_params.get('color', '#1a1a2e')
+        canvas = _create_solid_background(color, blur)
+
+    # Apply tech frame overlay if requested
+    if bg_params.get('tech_overlay', True):
+        tech_overlay = _create_tech_overlay()
+        canvas = Image.alpha_composite(canvas, tech_overlay)
 
     has_char = len(char_imgs) > 0
     has_cx = len(cx_imgs) > 0
 
-    # Determine center positions based on what's present
+    # Determine center positions based on what's present (shifted up 30px)
     if has_char and has_cx:
-        fan_center_y = 235  # slightly lower to accommodate arch-down
-        cx_center_y = 490
+        fan_center_y = 205
+        cx_center_y = 460
     elif has_char:
-        fan_center_y = CANVAS_H // 2 - 15
+        fan_center_y = CANVAS_H // 2 - 45
         cx_center_y = 0
     else:
         fan_center_y = 0
-        cx_center_y = CANVAS_H // 2
+        cx_center_y = CANVAS_H // 2 - 30
 
     fan_center_x = CANVAS_W // 2
 
@@ -446,9 +553,10 @@ def generate_showcase_image(selected_cards, deck_data,
             fill=(200, 200, 200, 200),
         )
 
-    # Right side: deck code
+    # Right side: deck code with source label
     if deck_code:
-        code_text = f'Code: {deck_code}'
+        source_label = SOURCE_LABELS.get(source, '')
+        code_text = f'{source_label} | {deck_code}' if source_label else f'Code: {deck_code}'
         bbox = draw.textbbox((0, 0), code_text, font=font_small)
         code_w = bbox[2] - bbox[0]
         _draw_text_with_shadow(

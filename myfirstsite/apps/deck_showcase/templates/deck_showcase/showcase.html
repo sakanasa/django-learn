@@ -206,11 +206,11 @@
       <i class="fas fa-search mr-2"></i><span data-i18n="deck_showcase.input_title">輸入牌組代碼</span>
     </h2>
     <!-- Source selector -->
-    <div class="flex items-center gap-3 mb-3">
+    <div class="flex items-center gap-3 mb-3 flex-wrap">
       <span class="text-sm text-gray-400 whitespace-nowrap" data-i18n="deck_showcase.source">牌組來源</span>
       <div class="flex items-center gap-2 flex-wrap">
         <label class="source-radio">
-          <input type="radio" name="deck_source" value="decklog_en" checked class="hidden peer" />
+          <input type="radio" name="deck_source" value="decklog_en" class="hidden peer" />
           <span class="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10
                        bg-white/5 text-gray-400 cursor-pointer transition-all
                        peer-checked:border-cyrene-blue peer-checked:text-cyrene-blue peer-checked:bg-cyrene-blue/10"
@@ -224,7 +224,7 @@
                 data-i18n="deck_showcase.source_decklog_jp">Decklog JP</span>
         </label>
         <label class="source-radio">
-          <input type="radio" name="deck_source" value="bottleneko" class="hidden peer" />
+          <input type="radio" name="deck_source" value="bottleneko" checked class="hidden peer" />
           <span class="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10
                        bg-white/5 text-gray-400 cursor-pointer transition-all
                        peer-checked:border-cyrene-pink peer-checked:text-cyrene-pink peer-checked:bg-cyrene-pink/10"
@@ -281,6 +281,10 @@
             class="px-3 py-1 rounded-lg text-xs font-medium text-white bg-white/10 hover:bg-white/20 transition-colors">
             <span data-i18n="deck_showcase.clear_all">清除</span>
           </button>
+          <button type="button" id="merge_duplicates_btn"
+            class="px-3 py-1 rounded-lg text-xs font-medium text-white bg-cyrene-pink/20 border border-cyrene-pink/40 hover:bg-cyrene-pink/30 transition-colors">
+            <i class="fas fa-layer-group mr-1"></i><span data-i18n="deck_showcase.merge_duplicates">合併重複</span>
+          </button>
         </div>
       </div>
       <div id="card_grid" class="card-grid"></div>
@@ -325,6 +329,104 @@
                    transition-colors"
             data-i18n-placeholder="deck_showcase.player_message_placeholder"
             placeholder="一句話留言（最多40字）" />
+        </div>
+      </div>
+
+      <!-- Background Settings -->
+      <div id="bg_settings_section" class="hidden mt-6">
+        <h3 class="text-sm font-semibold text-cyrene-blue mb-3">
+          <i class="fas fa-palette mr-1"></i>
+          <span data-i18n="deck_showcase.bg_settings">背景設定</span>
+        </h3>
+
+        <!-- Row 1: Background type radios + tech overlay toggle -->
+        <div class="flex flex-wrap gap-2 mb-3 items-center">
+          <label class="bg-type-radio">
+            <input type="radio" name="bg_type" value="solid" checked class="hidden peer" />
+            <span class="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10
+                         bg-white/5 text-gray-400 cursor-pointer transition-all
+                         peer-checked:border-cyrene-blue peer-checked:text-cyrene-blue peer-checked:bg-cyrene-blue/10"
+                  data-i18n="deck_showcase.bg_solid">純色</span>
+          </label>
+          <label class="bg-type-radio">
+            <input type="radio" name="bg_type" value="gradient" class="hidden peer" />
+            <span class="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10
+                         bg-white/5 text-gray-400 cursor-pointer transition-all
+                         peer-checked:border-cyrene-blue peer-checked:text-cyrene-blue peer-checked:bg-cyrene-blue/10"
+                  data-i18n="deck_showcase.bg_gradient">漸層</span>
+          </label>
+          <label class="bg-type-radio">
+            <input type="radio" name="bg_type" value="image" class="hidden peer" />
+            <span class="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10
+                         bg-white/5 text-gray-400 cursor-pointer transition-all
+                         peer-checked:border-cyrene-blue peer-checked:text-cyrene-blue peer-checked:bg-cyrene-blue/10"
+                  data-i18n="deck_showcase.bg_image">上傳圖片</span>
+          </label>
+          <span class="w-px h-6 bg-white/10 self-center"></span>
+          <button type="button" id="bg_tech_overlay_btn"
+            class="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all
+                   border-cyrene-blue text-cyrene-blue bg-cyrene-blue/10"
+            data-i18n="deck_showcase.bg_tech_overlay">科技框線</button>
+        </div>
+
+        <!-- Row 2: Sub-options (conditional) -->
+        <!-- Solid Color Options -->
+        <div id="bg_solid_options" class="mb-3">
+          <label class="text-xs text-gray-400 block mb-2" data-i18n="deck_showcase.bg_color">顏色</label>
+          <input type="color" id="bg_solid_color" value="#1a1a2e"
+                 class="h-10 w-24 rounded-lg border border-white/10 bg-transparent cursor-pointer" />
+        </div>
+
+        <!-- Gradient Options -->
+        <div id="bg_gradient_options" class="hidden mb-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="text-xs text-gray-400 block mb-2" data-i18n="deck_showcase.bg_color1">顏色 1</label>
+              <input type="color" id="bg_gradient_color1" value="#1a1a2e"
+                     class="h-10 w-full rounded-lg border border-white/10 bg-transparent cursor-pointer" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-400 block mb-2" data-i18n="deck_showcase.bg_color2">顏色 2</label>
+              <input type="color" id="bg_gradient_color2" value="#0f3460"
+                     class="h-10 w-full rounded-lg border border-white/10 bg-transparent cursor-pointer" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-400 block mb-2" data-i18n="deck_showcase.bg_direction">方向</label>
+              <select id="bg_gradient_direction"
+                      class="h-10 w-full rounded-lg border border-white/10 bg-white/5 text-white text-sm px-3
+                             focus:outline-none focus:border-cyrene-blue focus:ring-1 focus:ring-cyrene-blue/50">
+                <option value="horizontal" data-i18n="deck_showcase.bg_direction_h">水平</option>
+                <option value="vertical" data-i18n="deck_showcase.bg_direction_v">垂直</option>
+                <option value="diagonal" data-i18n="deck_showcase.bg_direction_d">對角</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Image Upload Options -->
+        <div id="bg_image_options" class="hidden mb-3">
+          <label class="text-xs text-gray-400 block mb-2" data-i18n="deck_showcase.bg_image">上傳圖片</label>
+          <input type="file" id="bg_image_file" accept="image/*"
+                 class="block w-full text-sm text-gray-400
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-lg file:border-0
+                        file:text-sm file:font-medium
+                        file:bg-white/10 file:text-white
+                        hover:file:bg-white/20 file:cursor-pointer
+                        cursor-pointer" />
+        </div>
+
+        <!-- Blur Slider (for all types) -->
+        <div class="mb-3">
+          <label class="text-xs text-gray-400 block mb-2">
+            <span data-i18n="deck_showcase.bg_blur">模糊</span>: <span id="blur_value_display">0</span>
+          </label>
+          <input type="range" id="bg_blur_slider" min="0" max="20" step="1" value="0"
+                 class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer
+                        [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                        [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cyrene-blue
+                        [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4
+                        [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-cyrene-blue [&::-moz-range-thumb]:border-0" />
         </div>
       </div>
 
@@ -393,13 +495,28 @@
   const playerInfoSection = document.getElementById('player_info_section');
   const playerNameInput = document.getElementById('player_name_input');
   const playerMessageInput = document.getElementById('player_message_input');
+  const bgSettingsSection = document.getElementById('bg_settings_section');
+  const bgSolidOptions = document.getElementById('bg_solid_options');
+  const bgGradientOptions = document.getElementById('bg_gradient_options');
+  const bgImageOptions = document.getElementById('bg_image_options');
+  const bgSolidColor = document.getElementById('bg_solid_color');
+  const bgGradientColor1 = document.getElementById('bg_gradient_color1');
+  const bgGradientColor2 = document.getElementById('bg_gradient_color2');
+  const bgGradientDirection = document.getElementById('bg_gradient_direction');
+  const bgImageFile = document.getElementById('bg_image_file');
+  const bgBlurSlider = document.getElementById('bg_blur_slider');
+  const blurValueDisplay = document.getElementById('blur_value_display');
+  const mergeDuplicatesBtn = document.getElementById('merge_duplicates_btn');
+  const bgTechOverlayBtn = document.getElementById('bg_tech_overlay_btn');
+  let techOverlayEnabled = true;
+  let mergeEnabled = true;
 
   let allCards = [];
   // Ordered arrays instead of Set
   let selectedCharCards = [];  // {card_number, card_name, img_url, rare, level, card_type}
   let selectedCxCards = [];
   let currentDeckCode = '';
-  let currentSource = 'decklog_en';
+  let currentSource = 'bottleneko';
 
   function getSelectedSource() {
     const checked = document.querySelector('input[name="deck_source"]:checked');
@@ -443,13 +560,15 @@
     }
     generateBtn.disabled = n === 0;
 
-    // Show/hide arrangement section and player info
+    // Show/hide arrangement section, player info, and bg settings
     if (n > 0) {
       arrangementSection.classList.remove('hidden');
       playerInfoSection.classList.remove('hidden');
+      bgSettingsSection.classList.remove('hidden');
     } else {
       arrangementSection.classList.add('hidden');
       playerInfoSection.classList.add('hidden');
+      bgSettingsSection.classList.add('hidden');
     }
   }
 
@@ -483,9 +602,24 @@
     renderArrangementStrips();
   }
 
-  function renderGrid(cards) {
+  function getDisplayCards() {
+    if (!mergeEnabled) return allCards;
+    const merged = {};
+    allCards.forEach(c => {
+      const key = c.card_number;
+      if (merged[key]) {
+        merged[key].count += c.count;
+      } else {
+        merged[key] = { ...c };
+      }
+    });
+    return Object.values(merged);
+  }
+
+  function renderGrid() {
+    const displayCards = getDisplayCards();
     cardGrid.innerHTML = '';
-    cards.forEach(card => {
+    displayCards.forEach(card => {
       const div = document.createElement('div');
       div.className = 'card-item';
       div.setAttribute('data-card', card.card_number);
@@ -666,7 +800,7 @@
       selectedCxCards = [];
       seriesLabel.textContent = data.series_name || '';
 
-      renderGrid(allCards);
+      renderGrid();
       updateSelectedCount();
       renderArrangementStrips();
 
@@ -686,7 +820,7 @@
   selectAllBtn.addEventListener('click', () => {
     selectedCharCards = [];
     selectedCxCards = [];
-    allCards.forEach(c => {
+    getDisplayCards().forEach(c => {
       if (isCx(c)) {
         selectedCxCards.push(c);
       } else {
@@ -729,6 +863,22 @@
       const playerMessage = playerMessageInput.value.trim();
       if (playerName) formData.append('player_name', playerName);
       if (playerMessage) formData.append('player_message', playerMessage);
+
+      // Background settings
+      const bgType = document.querySelector('input[name="bg_type"]:checked').value;
+      formData.append('bg_type', bgType);
+      formData.append('bg_blur', bgBlurSlider.value);
+      formData.append('bg_tech_overlay', techOverlayEnabled ? '1' : '0');
+
+      if (bgType === 'solid') {
+        formData.append('bg_color', bgSolidColor.value);
+      } else if (bgType === 'gradient') {
+        formData.append('bg_color1', bgGradientColor1.value);
+        formData.append('bg_color2', bgGradientColor2.value);
+        formData.append('bg_direction', bgGradientDirection.value);
+      } else if (bgType === 'image' && bgImageFile.files.length > 0) {
+        formData.append('bg_image', bgImageFile.files[0]);
+      }
 
       const resp = await fetch('{% url "deck_showcase:showcase_generate" %}', {
         method: 'POST',
@@ -780,6 +930,52 @@
       e.preventDefault();
       loadDeck();
     }
+  });
+
+  /* ========= Background Settings ========= */
+
+  function updateBgOptions() {
+    const bgType = document.querySelector('input[name="bg_type"]:checked').value;
+    bgSolidOptions.classList.add('hidden');
+    bgGradientOptions.classList.add('hidden');
+    bgImageOptions.classList.add('hidden');
+
+    if (bgType === 'solid') {
+      bgSolidOptions.classList.remove('hidden');
+    } else if (bgType === 'gradient') {
+      bgGradientOptions.classList.remove('hidden');
+    } else if (bgType === 'image') {
+      bgImageOptions.classList.remove('hidden');
+    }
+  }
+
+  document.querySelectorAll('input[name="bg_type"]').forEach(radio => {
+    radio.addEventListener('change', updateBgOptions);
+  });
+
+  bgBlurSlider.addEventListener('input', function() {
+    blurValueDisplay.textContent = this.value;
+  });
+
+  /* ========= Merge Duplicates Toggle ========= */
+
+  bgTechOverlayBtn.addEventListener('click', function() {
+    techOverlayEnabled = !techOverlayEnabled;
+    if (techOverlayEnabled) {
+      bgTechOverlayBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium border transition-all border-cyrene-blue text-cyrene-blue bg-cyrene-blue/10';
+    } else {
+      bgTechOverlayBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium border transition-all border-white/10 bg-white/5 text-gray-400';
+    }
+  });
+
+  mergeDuplicatesBtn.addEventListener('click', function() {
+    mergeEnabled = !mergeEnabled;
+    if (mergeEnabled) {
+      mergeDuplicatesBtn.className = 'px-3 py-1 rounded-lg text-xs font-medium text-white bg-cyrene-pink/20 border border-cyrene-pink/40 hover:bg-cyrene-pink/30 transition-colors';
+    } else {
+      mergeDuplicatesBtn.className = 'px-3 py-1 rounded-lg text-xs font-medium text-white bg-white/10 hover:bg-white/20 transition-colors';
+    }
+    renderGrid();
   });
 </script>
 {% endblock %}

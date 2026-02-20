@@ -47,6 +47,9 @@ def _card_number_to_img_path(card_number):
 
     Pattern: first char of prefix / series_code_lowercase / full_number_lowercase.png
     e.g. Fab/W120-066 -> f/fab_w120/fab_w120_066.png
+
+    WE (Weiss Extra) series use a cross-series folder:
+    e.g. Kch/WE50-52 -> k/kxx_we50/kch_we50_52.png
     """
     if '/' not in card_number or '-' not in card_number:
         return ''
@@ -54,7 +57,15 @@ def _card_number_to_img_path(card_number):
     first_char = prefix[0]
     series_part = card_number.split('-')[0].lower().replace('/', '_')
     cn_lower = card_number.lower().replace('/', '_').replace('-', '_')
-    return f'{first_char}/{series_part}/{cn_lower}.png'
+
+    # WE series use cross-series folder: <first_char>xx_we<num>
+    after_slash = card_number.split('/')[1].split('-')[0]
+    if after_slash.upper().startswith('WE'):
+        folder = f'{first_char}xx_{after_slash.lower()}'
+    else:
+        folder = series_part
+
+    return f'{first_char}/{folder}/{cn_lower}.png'
 
 
 # ============================================================
