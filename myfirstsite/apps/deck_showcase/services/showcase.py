@@ -1,6 +1,6 @@
 import io
 import math
-import random
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
@@ -66,210 +66,114 @@ def _download_all_images(img_paths):
 
 
 # ============================================================
-# Themed backgrounds (Change 2)
+# Tech-frame background with deck color adaptation
 # ============================================================
 
-def _create_themed_background():
-    """Create a random themed background canvas."""
-    theme = random.choice(['ink_wash', 'ancient', 'cyber', 'gradient'])
-    return {
-        'ink_wash': _bg_ink_wash,
-        'ancient': _bg_ancient,
-        'cyber': _bg_cyber,
-        'gradient': _bg_gradient,
-    }[theme]()
+# WS four-color palettes
+WS_COLOR_PALETTES = {
+    'red':    {'base': (40, 12, 15), 'accent': (180, 50, 60),  'glow': (220, 80, 90)},
+    'blue':   {'base': (12, 18, 42), 'accent': (50, 100, 180), 'glow': (80, 140, 220)},
+    'yellow': {'base': (38, 30, 12), 'accent': (180, 150, 50), 'glow': (220, 190, 80)},
+    'green':  {'base': (12, 35, 18), 'accent': (50, 160, 80),  'glow': (80, 200, 110)},
+}
+
+# Default palette when color cannot be determined
+_DEFAULT_PALETTE = {'base': (20, 18, 30), 'accent': (100, 80, 140), 'glow': (150, 120, 190)}
 
 
-def _bg_ink_wash():
-    """Soft grey ink wash background with splatter effects."""
+def _count_deck_colors(cards):
+    """Count card colors and return the dominant color name."""
+    counts = Counter()
+    for c in cards:
+        color = (c.get('color') or '').lower().strip()
+        if color in WS_COLOR_PALETTES:
+            counts[color] += 1
+    if not counts:
+        return 'blue'  # fallback
+    return counts.most_common(1)[0][0]
+
+
+def _create_tech_background(dominant_color='blue'):
+    """Create a fixed tech-frame background with color adapted to deck."""
+    palette = WS_COLOR_PALETTES.get(dominant_color, _DEFAULT_PALETTE)
+    base = palette['base']
+    accent = palette['accent']
+    glow = palette['glow']
+
     canvas = Image.new('RGBA', (CANVAS_W, CANVAS_H), (0, 0, 0, 255))
     draw = ImageDraw.Draw(canvas)
 
-    # Base grey gradient
+    # 1. Gradient base (top lighter, bottom darker)
     for y in range(CANVAS_H):
         ratio = y / CANVAS_H
-        v = int(35 + 15 * (1 - ratio))
-        draw.line([(0, y), (CANVAS_W, y)], fill=(v, v, v + 3, 255))
-
-    # Random semi-transparent ink splatters
-    overlay = Image.new('RGBA', (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
-    ov_draw = ImageDraw.Draw(overlay)
-    for _ in range(random.randint(6, 12)):
-        cx = random.randint(-100, CANVAS_W + 100)
-        cy = random.randint(-100, CANVAS_H + 100)
-        r = random.randint(60, 250)
-        tone = random.randint(20, 60)
-        alpha = random.randint(30, 80)
-        ov_draw.ellipse(
-            [cx - r, cy - r, cx + r, cy + r],
-            fill=(tone, tone, tone, alpha),
-        )
-    overlay = overlay.filter(ImageFilter.GaussianBlur(40))
-    canvas = Image.alpha_composite(canvas, overlay)
-
-    # Horizontal brush strokes
-    stroke_overlay = Image.new('RGBA', (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
-    s_draw = ImageDraw.Draw(stroke_overlay)
-    for _ in range(random.randint(3, 7)):
-        y = random.randint(0, CANVAS_H)
-        tone = random.randint(40, 70)
-        alpha = random.randint(15, 40)
-        thickness = random.randint(2, 6)
-        for dy in range(thickness):
-            s_draw.line([(0, y + dy), (CANVAS_W, y + dy)],
-                        fill=(tone, tone, tone, alpha))
-    canvas = Image.alpha_composite(canvas, stroke_overlay)
-
-    return canvas
-
-
-def _bg_ancient():
-    """Warm golden-brown ancient parchment background."""
-    canvas = Image.new('RGBA', (CANVAS_W, CANVAS_H), (0, 0, 0, 255))
-    draw = ImageDraw.Draw(canvas)
-
-    # Warm gradient from dark brown to amber
-    for y in range(CANVAS_H):
-        ratio = y / CANVAS_H
-        r = int(40 + 25 * ratio)
-        g = int(25 + 18 * ratio)
-        b = int(15 + 8 * ratio)
+        r = int(base[0] + 12 * (1 - ratio))
+        g = int(base[1] + 10 * (1 - ratio))
+        b = int(base[2] + 8 * (1 - ratio))
         draw.line([(0, y), (CANVAS_W, y)], fill=(r, g, b, 255))
 
-    # Decorative border lines
-    border_color = (120, 85, 40, 80)
-    margin = 20
-    draw.rectangle(
-        [margin, margin, CANVAS_W - margin, CANVAS_H - margin],
-        outline=border_color, width=2,
-    )
-    draw.rectangle(
-        [margin + 6, margin + 6, CANVAS_W - margin - 6, CANVAS_H - margin - 6],
-        outline=(100, 70, 30, 50), width=1,
-    )
-
-    # Faint circular seal patterns
-    overlay = Image.new('RGBA', (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
-    ov_draw = ImageDraw.Draw(overlay)
-    for _ in range(random.randint(2, 5)):
-        cx = random.randint(50, CANVAS_W - 50)
-        cy = random.randint(50, CANVAS_H - 50)
-        r = random.randint(30, 80)
-        ov_draw.ellipse(
-            [cx - r, cy - r, cx + r, cy + r],
-            outline=(140, 100, 50, 35), width=2,
+    # 2. Center glow (soft radial light)
+    glow_overlay = Image.new('RGBA', (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
+    glow_draw = ImageDraw.Draw(glow_overlay)
+    cx, cy = CANVAS_W // 2, CANVAS_H // 2
+    for radius in range(300, 0, -5):
+        alpha = int(18 * (1 - radius / 300))
+        glow_draw.ellipse(
+            [cx - radius, cy - radius, cx + radius, cy + radius],
+            fill=(*glow, alpha),
         )
-    canvas = Image.alpha_composite(canvas, overlay)
+    glow_overlay = glow_overlay.filter(ImageFilter.GaussianBlur(50))
+    canvas = Image.alpha_composite(canvas, glow_overlay)
 
-    return canvas
-
-
-def _bg_cyber():
-    """Dark blue cyber/tech background with grid and neon accents."""
-    canvas = Image.new('RGBA', (CANVAS_W, CANVAS_H), (10, 10, 30, 255))
     draw = ImageDraw.Draw(canvas)
 
-    # Subtle vertical gradient
-    for y in range(CANVAS_H):
-        ratio = y / CANVAS_H
-        r = int(10 + 5 * ratio)
-        g = int(10 + 5 * ratio)
-        b = int(30 + 15 * (1 - ratio))
-        draw.line([(0, y), (CANVAS_W, y)], fill=(r, g, b, 255))
+    # 3. Double-frame border
+    m1 = 16  # outer margin
+    m2 = 24  # inner margin
+    draw.rectangle(
+        [m1, m1, CANVAS_W - m1, CANVAS_H - m1],
+        outline=(*accent, 70), width=2,
+    )
+    draw.rectangle(
+        [m2, m2, CANVAS_W - m2, CANVAS_H - m2],
+        outline=(*accent, 40), width=1,
+    )
 
-    # Perspective grid lines
-    grid_color = (30, 60, 100, 40)
-    # Horizontal lines
-    for y in range(0, CANVAS_H, 40):
-        draw.line([(0, y), (CANVAS_W, y)], fill=grid_color, width=1)
-    # Vertical lines converging
-    vanish_x, vanish_y = CANVAS_W // 2, CANVAS_H // 3
-    for x in range(0, CANVAS_W + 1, 80):
-        draw.line([(x, CANVAS_H), (vanish_x, vanish_y)], fill=grid_color, width=1)
-
-    # Random bright rectangles
-    overlay = Image.new('RGBA', (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
-    ov_draw = ImageDraw.Draw(overlay)
-    neon_colors = [
-        (0, 200, 255), (255, 0, 150), (0, 255, 100),
-        (255, 200, 0), (150, 0, 255),
+    # 4. Corner L-decorations
+    corner_len = 40
+    corner_color = (*accent, 100)
+    corners = [
+        # top-left
+        ((m1, m1), (m1 + corner_len, m1), (m1, m1 + corner_len)),
+        # top-right
+        ((CANVAS_W - m1, m1), (CANVAS_W - m1 - corner_len, m1), (CANVAS_W - m1, m1 + corner_len)),
+        # bottom-left
+        ((m1, CANVAS_H - m1), (m1 + corner_len, CANVAS_H - m1), (m1, CANVAS_H - m1 - corner_len)),
+        # bottom-right
+        ((CANVAS_W - m1, CANVAS_H - m1), (CANVAS_W - m1 - corner_len, CANVAS_H - m1), (CANVAS_W - m1, CANVAS_H - m1 - corner_len)),
     ]
-    for _ in range(random.randint(4, 10)):
-        rx = random.randint(0, CANVAS_W)
-        ry = random.randint(0, CANVAS_H)
-        rw = random.randint(10, 60)
-        rh = random.randint(10, 40)
-        color = random.choice(neon_colors)
-        alpha = random.randint(15, 40)
-        ov_draw.rectangle([rx, ry, rx + rw, ry + rh], fill=(*color, alpha))
+    for corner_pt, h_end, v_end in corners:
+        draw.line([corner_pt, h_end], fill=corner_color, width=3)
+        draw.line([corner_pt, v_end], fill=corner_color, width=3)
 
-    # Neon glow circles
-    for _ in range(random.randint(2, 5)):
-        cx = random.randint(0, CANVAS_W)
-        cy = random.randint(0, CANVAS_H)
-        r = random.randint(40, 120)
-        color = random.choice(neon_colors)
-        ov_draw.ellipse(
-            [cx - r, cy - r, cx + r, cy + r],
-            fill=(*color, 15),
-        )
-    overlay = overlay.filter(ImageFilter.GaussianBlur(15))
-    canvas = Image.alpha_composite(canvas, overlay)
+    # 5. Corner dots
+    dot_r = 3
+    dot_color = (*glow, 120)
+    for x, y in [(m1, m1), (CANVAS_W - m1, m1), (m1, CANVAS_H - m1), (CANVAS_W - m1, CANVAS_H - m1)]:
+        draw.ellipse([x - dot_r, y - dot_r, x + dot_r, y + dot_r], fill=dot_color)
 
-    return canvas
+    # 6. Scan lines (horizontal, faint)
+    scan_overlay = Image.new('RGBA', (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
+    s_draw = ImageDraw.Draw(scan_overlay)
+    for y in range(0, CANVAS_H, 4):
+        s_draw.line([(0, y), (CANVAS_W, y)], fill=(*accent, 8))
+    canvas = Image.alpha_composite(canvas, scan_overlay)
 
-
-def _bg_gradient():
-    """Colorful diagonal/radial gradient with randomized palettes."""
-    palettes = [
-        [(15, 10, 35), (45, 20, 60), (80, 30, 90)],
-        [(10, 20, 40), (20, 50, 80), (40, 80, 120)],
-        [(30, 10, 20), (60, 20, 40), (100, 30, 60)],
-        [(10, 30, 25), (20, 60, 50), (30, 90, 75)],
-        [(25, 15, 40), (50, 30, 70), (90, 50, 100)],
-        [(35, 15, 15), (70, 25, 25), (110, 40, 40)],
-    ]
-    palette = random.choice(palettes)
-    use_radial = random.choice([True, False])
-
-    canvas = Image.new('RGBA', (CANVAS_W, CANVAS_H), (0, 0, 0, 255))
-    draw = ImageDraw.Draw(canvas)
-
-    if use_radial:
-        # Radial gradient from center
-        cx, cy = CANVAS_W // 2, CANVAS_H // 2
-        max_dist = math.sqrt(cx ** 2 + cy ** 2)
-        for y in range(CANVAS_H):
-            for x in range(0, CANVAS_W, 4):
-                dist = math.sqrt((x - cx) ** 2 + (y - cy) ** 2)
-                ratio = min(dist / max_dist, 1.0)
-                if ratio < 0.5:
-                    t = ratio * 2
-                    r = int(palette[0][0] + (palette[1][0] - palette[0][0]) * t)
-                    g = int(palette[0][1] + (palette[1][1] - palette[0][1]) * t)
-                    b = int(palette[0][2] + (palette[1][2] - palette[0][2]) * t)
-                else:
-                    t = (ratio - 0.5) * 2
-                    r = int(palette[1][0] + (palette[2][0] - palette[1][0]) * t)
-                    g = int(palette[1][1] + (palette[2][1] - palette[1][1]) * t)
-                    b = int(palette[1][2] + (palette[2][2] - palette[1][2]) * t)
-                draw.rectangle([x, y, x + 3, y], fill=(r, g, b, 255))
-    else:
-        # Diagonal gradient
-        for y in range(CANVAS_H):
-            for x in range(0, CANVAS_W, 4):
-                ratio = (x / CANVAS_W + y / CANVAS_H) / 2
-                if ratio < 0.5:
-                    t = ratio * 2
-                    r = int(palette[0][0] + (palette[1][0] - palette[0][0]) * t)
-                    g = int(palette[0][1] + (palette[1][1] - palette[0][1]) * t)
-                    b = int(palette[0][2] + (palette[1][2] - palette[0][2]) * t)
-                else:
-                    t = (ratio - 0.5) * 2
-                    r = int(palette[1][0] + (palette[2][0] - palette[1][0]) * t)
-                    g = int(palette[1][1] + (palette[2][1] - palette[1][1]) * t)
-                    b = int(palette[1][2] + (palette[2][2] - palette[1][2]) * t)
-                draw.rectangle([x, y, x + 3, y], fill=(r, g, b, 255))
+    # 7. Vertical accent lines at 1/4 and 3/4
+    line_overlay = Image.new('RGBA', (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
+    l_draw = ImageDraw.Draw(line_overlay)
+    for x_pos in [CANVAS_W // 4, 3 * CANVAS_W // 4]:
+        l_draw.line([(x_pos, m2 + 10), (x_pos, CANVAS_H - m2 - 10)], fill=(*accent, 15), width=1)
+    canvas = Image.alpha_composite(canvas, line_overlay)
 
     return canvas
 
@@ -431,9 +335,12 @@ def _render_cx_row(canvas, card_imgs, center_x, center_y):
 def generate_showcase_image(selected_cards, deck_data,
                             player_name='', player_message=''):
     """
-    Generate a deck showcase image with arch-down fan, themed background,
+    Generate a deck showcase image with arch-down fan, tech-frame background,
     and optional player info.
     """
+    # Determine dominant color from selected cards
+    dominant_color = _count_deck_colors(selected_cards)
+
     # Collect image paths
     img_paths = set()
     for c in selected_cards:
@@ -441,12 +348,12 @@ def generate_showcase_image(selected_cards, deck_data,
             img_paths.add(c['img'])
 
     if not img_paths:
-        return _generate_placeholder(deck_data)
+        return _generate_placeholder(deck_data, dominant_color)
 
     images = _download_all_images(img_paths)
 
     if not images:
-        return _generate_placeholder(deck_data)
+        return _generate_placeholder(deck_data, dominant_color)
 
     # Split into char/event cards and CX cards, prepare scaled images
     char_scale = 0.42
@@ -472,8 +379,8 @@ def generate_showcase_image(selected_cards, deck_data,
     if not char_imgs and not cx_imgs:
         return _generate_placeholder(deck_data)
 
-    # Create canvas with random themed background
-    canvas = _create_themed_background()
+    # Create canvas with tech-frame background
+    canvas = _create_tech_background(dominant_color)
 
     has_char = len(char_imgs) > 0
     has_cx = len(cx_imgs) > 0
@@ -556,9 +463,9 @@ def generate_showcase_image(selected_cards, deck_data,
     return buf.getvalue()
 
 
-def _generate_placeholder(deck_data):
+def _generate_placeholder(deck_data, dominant_color='blue'):
     """Generate a simple placeholder image when no card images are available."""
-    canvas = _create_themed_background()
+    canvas = _create_tech_background(dominant_color)
     draw = ImageDraw.Draw(canvas)
 
     font = _load_font(24)

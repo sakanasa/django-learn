@@ -205,6 +205,33 @@
     <h2 class="text-lg font-semibold text-cyrene-blue mb-4">
       <i class="fas fa-search mr-2"></i><span data-i18n="deck_showcase.input_title">輸入牌組代碼</span>
     </h2>
+    <!-- Source selector -->
+    <div class="flex items-center gap-3 mb-3">
+      <span class="text-sm text-gray-400 whitespace-nowrap" data-i18n="deck_showcase.source">牌組來源</span>
+      <div class="flex items-center gap-2 flex-wrap">
+        <label class="source-radio">
+          <input type="radio" name="deck_source" value="decklog_en" checked class="hidden peer" />
+          <span class="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10
+                       bg-white/5 text-gray-400 cursor-pointer transition-all
+                       peer-checked:border-cyrene-blue peer-checked:text-cyrene-blue peer-checked:bg-cyrene-blue/10"
+                data-i18n="deck_showcase.source_decklog_en">Decklog EN</span>
+        </label>
+        <label class="source-radio">
+          <input type="radio" name="deck_source" value="decklog_jp" class="hidden peer" />
+          <span class="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10
+                       bg-white/5 text-gray-400 cursor-pointer transition-all
+                       peer-checked:border-cyrene-blue peer-checked:text-cyrene-blue peer-checked:bg-cyrene-blue/10"
+                data-i18n="deck_showcase.source_decklog_jp">Decklog JP</span>
+        </label>
+        <label class="source-radio">
+          <input type="radio" name="deck_source" value="bottleneko" class="hidden peer" />
+          <span class="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10
+                       bg-white/5 text-gray-400 cursor-pointer transition-all
+                       peer-checked:border-cyrene-pink peer-checked:text-cyrene-pink peer-checked:bg-cyrene-pink/10"
+                data-i18n="deck_showcase.source_bottleneko">Bottleneko</span>
+        </label>
+      </div>
+    </div>
     <div class="flex items-center gap-3">
       <input type="text" id="deck_code_input"
         class="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3
@@ -372,6 +399,12 @@
   let selectedCharCards = [];  // {card_number, card_name, img_url, rare, level, card_type}
   let selectedCxCards = [];
   let currentDeckCode = '';
+  let currentSource = 'decklog_en';
+
+  function getSelectedSource() {
+    const checked = document.querySelector('input[name="deck_source"]:checked');
+    return checked ? checked.value : 'decklog_en';
+  }
 
   function getCSRF() {
     return document.querySelector('[name=csrfmiddlewaretoken]')?.value
@@ -607,8 +640,10 @@
     loadBtn.disabled = true;
 
     try {
+      currentSource = getSelectedSource();
       const formData = new FormData();
       formData.append('deck_code', deckCode);
+      formData.append('source', currentSource);
 
       const resp = await fetch('{% url "deck_showcase:showcase_cards" %}', {
         method: 'POST',
@@ -684,6 +719,7 @@
     try {
       const formData = new FormData();
       formData.append('deck_code', currentDeckCode);
+      formData.append('source', currentSource);
       // Send char cards first (in arrangement order), then CX cards
       selectedCharCards.forEach(c => formData.append('selected_cards[]', c.card_number));
       selectedCxCards.forEach(c => formData.append('selected_cards[]', c.card_number));

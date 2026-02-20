@@ -1,8 +1,10 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
-from deck_analysis.services.scraper import scrape_deck_simple
+from .services.scraper import scrape_deck
 from .services.showcase import generate_showcase_image
+
+VALID_SOURCES = {'decklog_en', 'decklog_jp', 'bottleneko'}
 
 
 @ensure_csrf_cookie
@@ -19,11 +21,15 @@ def showcase_cards(request):
         return JsonResponse({'error': 'POST required'}, status=405)
 
     deck_code = request.POST.get('deck_code', '').strip()
+    source = request.POST.get('source', 'decklog_en').strip()
+
     if not deck_code:
         return JsonResponse({'error': 'Please provide a deck code.'}, status=400)
+    if source not in VALID_SOURCES:
+        source = 'decklog_en'
 
     try:
-        deck_data = scrape_deck_simple(deck_code, merge_alts=False)
+        deck_data = scrape_deck(deck_code, source=source, merge_alts=False)
 
         if not deck_data.get('cards'):
             return JsonResponse({
@@ -45,6 +51,7 @@ def showcase_cards(request):
                 'card_type': c.get('card_type', ''),
                 'count': c.get('count', 1),
                 'rare': c.get('rare', ''),
+                'color': c.get('color', ''),
             })
 
         return JsonResponse({
@@ -69,6 +76,7 @@ def showcase_generate(request):
         return JsonResponse({'error': 'POST required'}, status=405)
 
     deck_code = request.POST.get('deck_code', '').strip()
+    source = request.POST.get('source', 'decklog_en').strip()
     selected_numbers = request.POST.getlist('selected_cards[]')
     player_name = request.POST.get('player_name', '').strip()[:20]
     player_message = request.POST.get('player_message', '').strip()[:40]
@@ -77,9 +85,11 @@ def showcase_generate(request):
         return JsonResponse({'error': 'Please provide a deck code.'}, status=400)
     if not selected_numbers:
         return JsonResponse({'error': 'Please select at least one card.'}, status=400)
+    if source not in VALID_SOURCES:
+        source = 'decklog_en'
 
     try:
-        deck_data = scrape_deck_simple(deck_code, merge_alts=False)
+        deck_data = scrape_deck(deck_code, source=source, merge_alts=False)
 
         if not deck_data.get('cards'):
             return JsonResponse({
