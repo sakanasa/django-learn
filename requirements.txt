@@ -1,0 +1,19 @@
+# Django Web Framework
+django>=5.2
+
+# HTTP Requests
+requests
+
+# Data & Visualization
+numpy
+matplotlib
+
+# Browser Automation
+selenium
+webdriver-manager
+
+# Image Processing
+Pillow
+
+# Stock Market Data
+yfinance

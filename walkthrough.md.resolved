@@ -1,0 +1,23 @@
+# 首頁改造完成
+
+## 修改摘要
+
+### [index.html](file:///c:/Users/91120/OneDrive/%E6%96%87%E4%BB%B6/GitHub/django-learn/myfirstsite/apps/home_page/templates/home_page/index.html) — 首頁 template 完整重寫
+
+- **新增「牌組展示圖」卡片** — 連結到 `deck_showcase:showcase`
+- **6 張工具卡片都加上技術標籤** — 如 Selenium、Matplotlib、Pillow、Ollama LLM 等
+- **新增 About Me 區塊** — 個人頭像、簡介、4 條技能進度條、3 組統計數字
+- **新增技術堆疊區塊** — 12 個技術 icon grid（Python、Django、JS、Tailwind 等）
+- **打字動畫新增** — 「牌組展示圖 / Deck Showcase」
+
+### [base.html](file:///c:/Users/91120/OneDrive/%E6%96%87%E4%BB%B6/GitHub/django-learn/myfirstsite/templates/base.html) — i18n 翻譯
+
+- 新增 10+ 個中英翻譯 key（deck_showcase、about、stats、tech_stack 等）
+
+## 驗證結果
+
+![首頁截圖](C:/Users/91120/.gemini/antigravity/brain/43b4bccb-caa5-4119-b170-91f2d633154d/homepage_full_view_1771863820576.png)
+
+![瀏覽器操作錄影](C:/Users/91120/.gemini/antigravity/brain/43b4bccb-caa5-4119-b170-91f2d633154d/homepage_verification_1771863800417.webp)
+
+✅ 所有 6 張卡片正確顯示&emsp;✅ 技術標籤呈現正常&emsp;✅ About 區塊 + 技能條&emsp;✅ 技術堆疊 grid&emsp;✅ 中英文切換正常

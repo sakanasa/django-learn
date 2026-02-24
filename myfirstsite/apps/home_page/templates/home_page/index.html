@@ -8,111 +8,251 @@
     border-right: 3px solid #C3ABE4;
     animation: blink-caret 0.8s step-end infinite;
   }
+
   @keyframes blink-caret {
-    0%, 100% { border-color: #C3ABE4; }
-    50% { border-color: transparent; }
+
+    0%,
+    100% {
+      border-color: #C3ABE4;
+    }
+
+    50% {
+      border-color: transparent;
+    }
   }
+
   .card-enter {
     opacity: 0;
     transform: translateY(20px);
     animation: card-fade-in 0.6s ease forwards;
   }
-  .card-enter:nth-child(2) { animation-delay: 0.15s; }
-  .card-enter:nth-child(3) { animation-delay: 0.3s; }
-  .card-enter:nth-child(4) { animation-delay: 0.45s; }
-  .card-enter:nth-child(5) { animation-delay: 0.6s; }
-  .card-enter:nth-child(6) { animation-delay: 0.75s; }
+
+  .card-enter:nth-child(1) {
+    animation-delay: 0.0s;
+  }
+
+  .card-enter:nth-child(2) {
+    animation-delay: 0.12s;
+  }
+
+  .card-enter:nth-child(3) {
+    animation-delay: 0.24s;
+  }
+
+  .card-enter:nth-child(4) {
+    animation-delay: 0.36s;
+  }
+
+  .card-enter:nth-child(5) {
+    animation-delay: 0.48s;
+  }
+
+  .card-enter:nth-child(6) {
+    animation-delay: 0.60s;
+  }
+
+  .card-enter:nth-child(7) {
+    animation-delay: 0.72s;
+  }
+
   @keyframes card-fade-in {
-    to { opacity: 1; transform: translateY(0); }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Tech tags */
+  .tech-tag {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: #9ca3af;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+
+  .tech-tag:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #d1d5db;
+  }
+
+  /* About section */
+  .about-fade-in {
+    opacity: 0;
+    transform: translateY(16px);
+    animation: card-fade-in 0.7s ease 0.2s forwards;
+  }
+
+  /* Skill bar */
+  .skill-bar-fill {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 1.2s ease;
+  }
+
+  /* Tech stack icons */
+  .tech-icon-hover {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .tech-icon-hover:hover {
+    transform: translateY(-4px) scale(1.08);
+    box-shadow: 0 4px 20px rgba(195, 171, 228, 0.25);
+  }
+
+  /* Stats counter */
+  .stat-number {
+    font-variant-numeric: tabular-nums;
   }
 </style>
 {% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
-<section class="flex flex-col items-center justify-center min-h-[55vh] text-center px-4">
+<section class="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
   <h1 class="text-4xl sm:text-5xl md:text-7xl font-display font-bold gradient-text mb-6 leading-tight">
     <span id="typed-text"></span><span class="typing-cursor">&nbsp;</span>
   </h1>
-  <p class="text-base sm:text-lg text-gray-400 max-w-2xl leading-relaxed whitespace-pre-line"
-     data-i18n="home.subtitle">夢幻般的工具與專案集合。
-探索下方的模組開始使用。</p>
+  <p class="text-base sm:text-lg text-gray-400 max-w-2xl leading-relaxed whitespace-pre-line" data-i18n="home.subtitle">
+    夢幻般的工具與專案集合。
+    探索下方的模組開始使用。</p>
 </section>
 
+<!-- About Me Section -->
+<section class="about-fade-in mb-16">
+  <div class="glass rounded-2xl p-8 md:p-10 max-w-4xl mx-auto">
+    <div class="flex flex-col md:flex-row gap-8 items-start">
+      <!-- Avatar & Info -->
+      <div class="flex-shrink-0 flex flex-col items-center md:items-start gap-3">
+        <div
+          class="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyrene-pink via-cyrene-lavender to-cyrene-blue flex items-center justify-center text-3xl font-display font-bold text-white shadow-lg">
+          S
+        </div>
+        <h2 class="text-xl font-display font-bold text-white" data-i18n="home.about_name">Sakanasa</h2>
+        <p class="text-xs text-gray-500" data-i18n="home.about_role">Full-Stack Developer</p>
+      </div>
+
+      <!-- Bio & Skills -->
+      <div class="flex-1 space-y-4">
+        <p class="text-gray-300 text-sm leading-relaxed" data-i18n="home.about_bio">
+          熱愛用程式解決問題的開發者。擅長 Python 後端開發與資料自動化，喜歡把實用的想法做成方便的小工具。這個工坊收錄了我在學習 Django 過程中打造的各種專案。
+        </p>
+
+        <!-- Skill bars -->
+        <div class="space-y-3 pt-2">
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-gray-400">Python / Django</span>
+              <span class="text-cyrene-lavender">85%</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-white/5">
+              <div class="skill-bar-fill bg-gradient-to-r from-cyrene-lavender to-cyrene-blue" style="width:85%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-gray-400">Web Scraping / Selenium</span>
+              <span class="text-cyrene-pink">80%</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-white/5">
+              <div class="skill-bar-fill bg-gradient-to-r from-cyrene-pink to-cyrene-lavender" style="width:80%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-gray-400">HTML / CSS / JavaScript</span>
+              <span class="text-cyrene-blue">75%</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-white/5">
+              <div class="skill-bar-fill bg-gradient-to-r from-cyrene-blue to-cyrene-pink" style="width:75%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-gray-400">Data Visualization</span>
+              <span class="text-cyrene-lavender">70%</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-white/5">
+              <div class="skill-bar-fill bg-gradient-to-r from-cyrene-lavender to-cyrene-pink" style="width:70%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/5">
+      <div class="text-center">
+        <div class="text-2xl font-display font-bold gradient-text stat-number">7</div>
+        <div class="text-xs text-gray-500 mt-1" data-i18n="home.stat_projects">個專案模組</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-display font-bold gradient-text stat-number">3</div>
+        <div class="text-xs text-gray-500 mt-1" data-i18n="home.stat_ws_tools">個 WS 工具</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-display font-bold gradient-text stat-number">7+</div>
+        <div class="text-xs text-gray-500 mt-1" data-i18n="home.stat_libraries">個套件整合</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section Title: Projects -->
+<div class="flex items-center gap-4 mb-8">
+  <h2 class="text-2xl font-display font-bold text-white" data-i18n="home.projects_title">專案模組</h2>
+  <div class="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent"></div>
+</div>
+
 <!-- Module Cards -->
-<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8 mb-16">
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
 
   <!-- Card: Deck Statistics -->
   <a href="{% url 'pie_chart:dashboard' %}"
-     class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
+    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
     <div class="flex items-center gap-4 mb-4">
       <div class="w-12 h-12 rounded-xl bg-cyrene-pink/15 flex items-center justify-center">
         <i class="fas fa-chart-pie text-xl text-cyrene-pink"></i>
       </div>
       <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-pink transition-colors"
-          data-i18n="home.deck_stats_title">牌組統計</h3>
+        data-i18n="home.deck_stats_title">牌組統計</h3>
     </div>
     <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.deck_stats_desc">
       分析卡牌遊戲比賽的牌組分佈。輸入牌組代碼，生成精美的系列佔比圓餅圖。
     </p>
-    <div class="mt-6 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
+    <div class="flex flex-wrap gap-1.5 mt-4">
+      <span class="tech-tag">Selenium</span>
+      <span class="tech-tag">Matplotlib</span>
+      <span class="tech-tag">NumPy</span>
+    </div>
+    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
       <span data-i18n="home.explore">探索</span>
       <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
     </div>
   </a>
 
-  <!-- Card: Journal -->
-  <a href="{% url 'journal:list' %}"
-     class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
-    <div class="flex items-center gap-4 mb-4">
-      <div class="w-12 h-12 rounded-xl bg-cyrene-lavender/15 flex items-center justify-center">
-        <i class="fas fa-book-open text-xl text-cyrene-lavender"></i>
-      </div>
-      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-lavender transition-colors"
-          data-i18n="home.journal_title">日誌</h3>
-    </div>
-    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.journal_desc">
-      個人日誌與筆記。在時間牆上記錄想法、靈感與每日感想。
-    </p>
-    <div class="mt-6 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
-      <span data-i18n="home.explore">探索</span>
-      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
-    </div>
-  </a>
-
-  <!-- Card: Color Palette -->
-  <a href="{% url 'color_palette:index' %}"
-     class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
+  <!-- Card: Deck Showcase -->
+  <a href="{% url 'deck_showcase:showcase' %}"
+    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
     <div class="flex items-center gap-4 mb-4">
       <div class="w-12 h-12 rounded-xl bg-cyrene-blue/15 flex items-center justify-center">
-        <i class="fas fa-palette text-xl text-cyrene-blue"></i>
+        <i class="fas fa-image text-xl text-cyrene-blue"></i>
       </div>
       <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-blue transition-colors"
-          data-i18n="home.color_palette_title">調色盤生成器</h3>
+        data-i18n="home.deck_showcase_title">牌組展示圖</h3>
     </div>
-    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.color_palette_desc">
-      選擇一個基礎色，自動生成互補色、類比色、三色組等多種配色方案。點擊色卡即可複製色碼。
+    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.deck_showcase_desc">
+      選擇想展示的卡牌，自訂背景與排列，生成精美的扇形展示圖。支援多種來源與玩家資訊。
     </p>
-    <div class="mt-6 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
-      <span data-i18n="home.explore">探索</span>
-      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+    <div class="flex flex-wrap gap-1.5 mt-4">
+      <span class="tech-tag">Pillow</span>
+      <span class="tech-tag">Requests</span>
+      <span class="tech-tag">Canvas</span>
     </div>
-  </a>
-
-  <!-- Card: Pomodoro Timer -->
-  <a href="{% url 'pomodoro:index' %}"
-     class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
-    <div class="flex items-center gap-4 mb-4">
-      <div class="w-12 h-12 rounded-xl bg-cyrene-lavender/15 flex items-center justify-center">
-        <i class="fas fa-clock text-xl text-cyrene-lavender"></i>
-      </div>
-      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-lavender transition-colors"
-          data-i18n="home.pomodoro_title">番茄鐘計時器</h3>
-    </div>
-    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.pomodoro_desc">
-      25/5 分鐘番茄工作法計時器。自訂時長、音效提醒、專注次數統計，助你高效專注。
-    </p>
-    <div class="mt-6 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
+    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
       <span data-i18n="home.explore">探索</span>
       <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
     </div>
@@ -120,36 +260,195 @@
 
   <!-- Card: Deck AI Analysis -->
   <a href="{% url 'deck_analysis:index' %}"
-     class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
+    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
     <div class="flex items-center gap-4 mb-4">
       <div class="w-12 h-12 rounded-xl bg-cyrene-pink/15 flex items-center justify-center">
         <i class="fas fa-brain text-xl text-cyrene-pink"></i>
       </div>
       <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-pink transition-colors"
-          data-i18n="home.deck_ai_title">牌組 AI 分析</h3>
+        data-i18n="home.deck_ai_title">牌組 AI 分析</h3>
     </div>
     <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.deck_ai_desc">
       輸入 decklog 牌組代碼，AI 自動爬取卡牌清單並進行 Weiß Schwarz 策略分析。
     </p>
-    <div class="mt-6 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
+    <div class="flex flex-wrap gap-1.5 mt-4">
+      <span class="tech-tag">Ollama LLM</span>
+      <span class="tech-tag">Requests</span>
+      <span class="tech-tag">Qwen 2.5</span>
+    </div>
+    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
       <span data-i18n="home.explore">探索</span>
       <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
     </div>
   </a>
 
-  <!-- Card: Coming Soon Placeholder -->
-  <div class="card-enter glass p-8 rounded-2xl border border-dashed border-white/10 opacity-50">
+  <!-- Card: Journal -->
+  <a href="{% url 'journal:list' %}"
+    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
     <div class="flex items-center gap-4 mb-4">
-      <div class="w-12 h-12 rounded-xl bg-cyrene-lavender/10 flex items-center justify-center">
-        <i class="fas fa-plus text-xl text-cyrene-lavender/50"></i>
+      <div class="w-12 h-12 rounded-xl bg-cyrene-lavender/15 flex items-center justify-center">
+        <i class="fas fa-book-open text-xl text-cyrene-lavender"></i>
       </div>
-      <h3 class="text-xl font-display font-semibold text-gray-500" data-i18n="home.coming_soon">敬請期待</h3>
+      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-lavender transition-colors"
+        data-i18n="home.journal_title">日誌</h3>
     </div>
-    <p class="text-gray-600 text-sm leading-relaxed" data-i18n="home.coming_soon_desc">
-      新的模組和工具將會在此出現。
+    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.journal_desc">
+      個人日誌與筆記。在時間牆上記錄想法、靈感與每日感想。
     </p>
+    <div class="flex flex-wrap gap-1.5 mt-4">
+      <span class="tech-tag">Django ORM</span>
+      <span class="tech-tag">Auth</span>
+      <span class="tech-tag">CRUD</span>
+    </div>
+    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
+      <span data-i18n="home.explore">探索</span>
+      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+    </div>
+  </a>
+
+  <!-- Card: Color Palette -->
+  <a href="{% url 'color_palette:index' %}"
+    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
+    <div class="flex items-center gap-4 mb-4">
+      <div class="w-12 h-12 rounded-xl bg-cyrene-blue/15 flex items-center justify-center">
+        <i class="fas fa-palette text-xl text-cyrene-blue"></i>
+      </div>
+      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-blue transition-colors"
+        data-i18n="home.color_palette_title">調色盤生成器</h3>
+    </div>
+    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.color_palette_desc">
+      選擇一個基礎色，自動生成互補色、類比色、三色組等多種配色方案。點擊色卡即可複製色碼。
+    </p>
+    <div class="flex flex-wrap gap-1.5 mt-4">
+      <span class="tech-tag">HSL 色彩</span>
+      <span class="tech-tag">JavaScript</span>
+      <span class="tech-tag">Clipboard API</span>
+    </div>
+    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
+      <span data-i18n="home.explore">探索</span>
+      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+    </div>
+  </a>
+
+  <!-- Card: Pomodoro Timer -->
+  <a href="{% url 'pomodoro:index' %}"
+    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
+    <div class="flex items-center gap-4 mb-4">
+      <div class="w-12 h-12 rounded-xl bg-cyrene-lavender/15 flex items-center justify-center">
+        <i class="fas fa-clock text-xl text-cyrene-lavender"></i>
+      </div>
+      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-lavender transition-colors"
+        data-i18n="home.pomodoro_title">番茄鐘計時器</h3>
+    </div>
+    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.pomodoro_desc">
+      25/5 分鐘番茄工作法計時器。自訂時長、音效提醒、專注次數統計，助你高效專注。
+    </p>
+    <div class="flex flex-wrap gap-1.5 mt-4">
+      <span class="tech-tag">Web Audio</span>
+      <span class="tech-tag">LocalStorage</span>
+      <span class="tech-tag">Timer API</span>
+    </div>
+    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
+      <span data-i18n="home.explore">探索</span>
+      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+    </div>
+  </a>
+
+  <!-- Card: Stock Market -->
+  <a href="{% url 'stock_market:dashboard' %}"
+    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
+    <div class="flex items-center gap-4 mb-4">
+      <div class="w-12 h-12 rounded-xl bg-cyrene-blue/15 flex items-center justify-center">
+        <i class="fas fa-chart-line text-xl text-cyrene-blue"></i>
+      </div>
+      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-blue transition-colors"
+        data-i18n="home.stock_title">股市指數儀表板</h3>
+    </div>
+    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.stock_desc">
+      即時追蹤美股與台股主要指數。查看 S&P 500、NASDAQ、道璩、台灣加權、費半等趨勢圖與漲跌幅。
+    </p>
+    <div class="flex flex-wrap gap-1.5 mt-4">
+      <span class="tech-tag">yfinance</span>
+      <span class="tech-tag">Canvas API</span>
+      <span class="tech-tag">REST API</span>
+    </div>
+    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
+      <span data-i18n="home.explore">探索</span>
+      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+    </div>
+  </a>
+
+</section>
+
+<!-- Tech Stack Section -->
+<section class="mb-16">
+  <div class="flex items-center gap-4 mb-8">
+    <h2 class="text-2xl font-display font-bold text-white" data-i18n="home.tech_stack_title">技術堆疊</h2>
+    <div class="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent"></div>
   </div>
 
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+    <!-- Python -->
+    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
+      <i class="fab fa-python text-3xl text-[#3776AB]"></i>
+      <span class="text-xs text-gray-400 font-medium">Python</span>
+    </div>
+    <!-- Django -->
+    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
+      <i class="fas fa-leaf text-3xl text-[#092E20]" style="color:#44B78B"></i>
+      <span class="text-xs text-gray-400 font-medium">Django</span>
+    </div>
+    <!-- JavaScript -->
+    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
+      <i class="fab fa-js-square text-3xl text-[#F7DF1E]"></i>
+      <span class="text-xs text-gray-400 font-medium">JavaScript</span>
+    </div>
+    <!-- Tailwind -->
+    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
+      <i class="fas fa-wind text-3xl text-[#38BDF8]"></i>
+      <span class="text-xs text-gray-400 font-medium">Tailwind CSS</span>
+    </div>
+    <!-- Selenium -->
+    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
+      <i class="fas fa-spider text-3xl text-[#43B02A]"></i>
+      <span class="text-xs text-gray-400 font-medium">Selenium</span>
+    </div>
+    <!-- SQLite -->
+    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
+      <i class="fas fa-database text-3xl text-[#4A90D9]"></i>
+      <span class="text-xs text-gray-400 font-medium">SQLite</span>
+    </div>
+    <!-- Matplotlib -->
+    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
+      <i class="fas fa-chart-area text-3xl text-[#11557C]" style="color:#E07C3E"></i>
+      <span class="text-xs text-gray-400 font-medium">Matplotlib</span>
+    </div>
+    <!-- Pillow -->
+    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
+      <i class="fas fa-images text-3xl text-[#8CAAE6]"></i>
+      <span class="text-xs text-gray-400 font-medium">Pillow</span>
+    </div>
+    <!-- Ollama -->
+    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
+      <i class="fas fa-robot text-3xl text-cyrene-lavender"></i>
+      <span class="text-xs text-gray-400 font-medium">Ollama</span>
+    </div>
+    <!-- NumPy -->
+    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
+      <i class="fas fa-square-root-variable text-3xl text-[#4DABCF]"></i>
+      <span class="text-xs text-gray-400 font-medium">NumPy</span>
+    </div>
+    <!-- Requests -->
+    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
+      <i class="fas fa-globe text-3xl text-[#DA5B0B]"></i>
+      <span class="text-xs text-gray-400 font-medium">Requests</span>
+    </div>
+    <!-- Git -->
+    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
+      <i class="fab fa-git-alt text-3xl text-[#F05032]"></i>
+      <span class="text-xs text-gray-400 font-medium">Git</span>
+    </div>
+  </div>
 </section>
 {% endblock %}
 
@@ -157,8 +456,8 @@
 <script>
   // Typing animation - language aware
   const phrasesMap = {
-    zh: ['歡迎來到sakanasa的工坊', '牌組分析','心情日誌', '調色盤', '番茄鐘', '牌組AI分析', '更多即將推出...'],
-    en: ['Welcome to Sakanasa Workshop', 'Deck Analytics','Journal', 'Color Palette', 'Pomodoro', 'Deck AI Analysis', 'More Coming Soon...']
+    zh: ['歡迎來到sakanasa的工坊', '牌組統計分析', '牌組展示圖', '牌組AI分析', '心情日誌', '調色盤生成器', '番茄鐘計時器', '股市儀表板', '更多即將推出...'],
+    en: ['Welcome to Sakanasa Workshop', 'Deck Statistics', 'Deck Showcase', 'Deck AI Analysis', 'Journal', 'Color Palette', 'Pomodoro Timer', 'Stock Market', 'More Coming Soon...']
   };
   let phraseIndex = 0;
   let charIndex = 0;
@@ -196,8 +495,23 @@
   type();
 
   // When language changes, reset typing animation
-  document.addEventListener('langchange', function() {
+  document.addEventListener('langchange', function () {
     isDeleting = true;
+  });
+
+  // Animate skill bars on scroll
+  const observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.querySelectorAll('.skill-bar-fill').forEach(function (bar) {
+          bar.style.width = bar.style.width; // trigger reflow
+        });
+      }
+    });
+  }, { threshold: 0.2 });
+
+  document.querySelectorAll('.about-fade-in').forEach(function (el) {
+    observer.observe(el);
   });
 </script>
 {% endblock %}

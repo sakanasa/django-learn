@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'apps.pomodoro.apps.PomodoroConfig',
     'apps.deck_analysis.apps.DeckAnalysisConfig',
     'apps.deck_showcase.apps.DeckShowcaseConfig',
+    'apps.stock_market.apps.StockMarketConfig',
 ]
 
 # Ollama LLM settings (Mac Studio via Tailscale)

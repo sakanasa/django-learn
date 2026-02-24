@@ -1,0 +1,440 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Market - Workshop{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Loading skeleton */
+    .skeleton {
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.04) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-shimmer 1.5s ease-in-out infinite;
+        border-radius: 6px;
+    }
+
+    @keyframes skeleton-shimmer {
+        0% {
+            background-position: 200% 0;
+        }
+
+        100% {
+            background-position: -200% 0;
+        }
+    }
+
+    /* Index card */
+    .index-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .index-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0 25px rgba(195, 171, 228, 0.12), 0 0 50px rgba(168, 216, 234, 0.06);
+    }
+
+    /* Price change colors */
+    .price-up {
+        color: #34D399;
+    }
+
+    .price-down {
+        color: #F87171;
+    }
+
+    .price-unchanged {
+        color: #9CA3AF;
+    }
+
+    .bg-up {
+        background: rgba(52, 211, 153, 0.1);
+        border-color: rgba(52, 211, 153, 0.2);
+    }
+
+    .bg-down {
+        background: rgba(248, 113, 113, 0.1);
+        border-color: rgba(248, 113, 113, 0.2);
+    }
+
+    /* Sparkline canvas */
+    .sparkline-canvas {
+        width: 100%;
+        height: 60px;
+    }
+
+    /* Card enter animation */
+    .card-stagger {
+        opacity: 0;
+        transform: translateY(16px);
+        animation: card-pop-in 0.5s ease forwards;
+    }
+
+    @keyframes card-pop-in {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Refresh button spin */
+    .spin {
+        animation: spin-anim 1s linear infinite;
+    }
+
+    @keyframes spin-anim {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Last updated pulse dot */
+    .pulse-dot {
+        width: 8px;
+        height: 8px;
+        background: #34D399;
+        border-radius: 50%;
+        display: inline-block;
+        animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4);
+        }
+
+        50% {
+            box-shadow: 0 0 0 6px rgba(52, 211, 153, 0);
+        }
+    }
+
+    /* Detail row */
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        font-size: 0.75rem;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<section class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+    <div>
+        <h1 class="text-3xl sm:text-4xl font-display font-bold gradient-text" data-i18n="stock.title">股市指數儀表板</h1>
+        <p class="text-gray-400 text-sm mt-2" data-i18n="stock.subtitle">即時追蹤美股與台股主要指數</p>
+    </div>
+    <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 text-xs text-gray-500">
+            <span class="pulse-dot"></span>
+            <span id="last-updated" data-i18n="stock.loading">載入中...</span>
+        </div>
+        <button id="refresh-btn" onclick="loadData()" class="glass px-4 py-2 rounded-xl text-sm text-gray-300 hover:text-white
+             border border-white/10 hover:border-cyrene-blue/30 transition-all flex items-center gap-2">
+            <i class="fas fa-sync-alt text-xs" id="refresh-icon"></i>
+            <span data-i18n="stock.refresh">重新整理</span>
+        </button>
+    </div>
+</section>
+
+<!-- Market Overview Summary Bar -->
+<div id="summary-bar" class="glass rounded-2xl p-4 mb-8 hidden">
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 text-center">
+        <!-- Filled dynamically -->
+    </div>
+</div>
+
+<!-- Index Cards Grid -->
+<div id="cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+    <!-- Loading skeletons -->
+    <div class="glass rounded-2xl p-6" id="skeleton-1">
+        <div class="skeleton h-5 w-32 mb-4"></div>
+        <div class="skeleton h-8 w-48 mb-3"></div>
+        <div class="skeleton h-4 w-24 mb-6"></div>
+        <div class="skeleton h-16 w-full mb-4"></div>
+        <div class="skeleton h-3 w-full mb-2"></div>
+        <div class="skeleton h-3 w-full mb-2"></div>
+        <div class="skeleton h-3 w-3/4"></div>
+    </div>
+    <div class="glass rounded-2xl p-6" id="skeleton-2">
+        <div class="skeleton h-5 w-32 mb-4"></div>
+        <div class="skeleton h-8 w-48 mb-3"></div>
+        <div class="skeleton h-4 w-24 mb-6"></div>
+        <div class="skeleton h-16 w-full mb-4"></div>
+        <div class="skeleton h-3 w-full mb-2"></div>
+        <div class="skeleton h-3 w-full mb-2"></div>
+        <div class="skeleton h-3 w-3/4"></div>
+    </div>
+    <div class="glass rounded-2xl p-6" id="skeleton-3">
+        <div class="skeleton h-5 w-32 mb-4"></div>
+        <div class="skeleton h-8 w-48 mb-3"></div>
+        <div class="skeleton h-4 w-24 mb-6"></div>
+        <div class="skeleton h-16 w-full mb-4"></div>
+        <div class="skeleton h-3 w-full mb-2"></div>
+        <div class="skeleton h-3 w-full mb-2"></div>
+        <div class="skeleton h-3 w-3/4"></div>
+    </div>
+</div>
+
+<!-- Error message -->
+<div id="error-msg" class="hidden glass rounded-2xl p-8 text-center mb-8">
+    <i class="fas fa-exclamation-triangle text-3xl text-cyrene-pink mb-4"></i>
+    <p class="text-gray-300" data-i18n="stock.error">資料載入失敗，請稍後再試。</p>
+    <button onclick="loadData()"
+        class="mt-4 px-4 py-2 rounded-xl bg-cyrene-lavender/20 text-cyrene-lavender text-sm hover:bg-cyrene-lavender/30 transition-colors">
+        <i class="fas fa-redo mr-1"></i> <span data-i18n="stock.retry">重試</span>
+    </button>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ── i18n labels ──
+    const stockLabels = {
+        zh: { open: '開盤', high: '最高', low: '最低', prevClose: '前收盤', updated: '更新於', loading: '載入中...', days: '近30天趨勢' },
+        en: { open: 'Open', high: 'High', low: 'Low', prevClose: 'Prev Close', updated: 'Updated', loading: 'Loading...', days: '30-Day Trend' }
+    };
+    function sl(key) { return (stockLabels[getLang()] || stockLabels.zh)[key] || key; }
+
+    // ── Format number with commas ──
+    function fmt(n) {
+        if (n === null || n === undefined) return '—';
+        return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // ── Draw sparkline on canvas ──
+    function drawSparkline(canvas, data, isUp) {
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+
+        const w = rect.width, h = rect.height;
+        const min = Math.min(...data);
+        const max = Math.max(...data);
+        const range = max - min || 1;
+        const step = w / (data.length - 1);
+
+        // Gradient fill
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        if (isUp) {
+            grad.addColorStop(0, 'rgba(52,211,153,0.25)');
+            grad.addColorStop(1, 'rgba(52,211,153,0)');
+        } else {
+            grad.addColorStop(0, 'rgba(248,113,113,0.25)');
+            grad.addColorStop(1, 'rgba(248,113,113,0)');
+        }
+
+        // Draw filled area
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        for (let i = 0; i < data.length; i++) {
+            const x = i * step;
+            const y = h - ((data[i] - min) / range) * (h * 0.85) - h * 0.05;
+            if (i === 0) ctx.lineTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.lineTo(w, h);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Draw line
+        ctx.beginPath();
+        for (let i = 0; i < data.length; i++) {
+            const x = i * step;
+            const y = h - ((data[i] - min) / range) * (h * 0.85) - h * 0.05;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = isUp ? '#34D399' : '#F87171';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Draw endpoint dot
+        const lastX = (data.length - 1) * step;
+        const lastY = h - ((data[data.length - 1] - min) / range) * (h * 0.85) - h * 0.05;
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 3, 0, Math.PI * 2);
+        ctx.fillStyle = isUp ? '#34D399' : '#F87171';
+        ctx.fill();
+    }
+
+    // ── Build card HTML ──
+    function buildCard(idx, i) {
+        const isUp = idx.change >= 0;
+        const colorClass = isUp ? 'price-up' : (idx.change < 0 ? 'price-down' : 'price-unchanged');
+        const bgClass = isUp ? 'bg-up' : 'bg-down';
+        const arrow = isUp ? '▲' : '▼';
+        const sign = isUp ? '+' : '';
+        const lang = getLang();
+        const name = lang === 'en' ? idx.name_en : idx.name_zh;
+
+        return `
+      <div class="index-card card-stagger glass rounded-2xl p-6 border border-white/5" style="animation-delay:${i * 0.1}s">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">${idx.flag}</span>
+            <h3 class="text-base font-display font-semibold text-white">${name}</h3>
+          </div>
+          <span class="text-[10px] text-gray-500 font-mono">${idx.symbol}</span>
+        </div>
+
+        <!-- Price -->
+        <div class="mb-1">
+          <span class="text-2xl font-display font-bold text-white">${fmt(idx.price)}</span>
+        </div>
+
+        <!-- Change -->
+        <div class="flex items-center gap-2 mb-4">
+          <span class="${colorClass} text-sm font-semibold flex items-center gap-1 px-2 py-0.5 rounded-md ${bgClass}" style="border:1px solid;">
+            <span class="text-[10px]">${arrow}</span> ${sign}${fmt(idx.change)} (${sign}${idx.change_pct}%)
+          </span>
+        </div>
+
+        <!-- Sparkline -->
+        <div class="mb-4">
+          <div class="text-[10px] text-gray-500 mb-1">${sl('days')}</div>
+          <canvas class="sparkline-canvas" id="spark-${idx.symbol.replace('^', '')}"></canvas>
+        </div>
+
+        <!-- Details -->
+        <div class="space-y-0">
+          <div class="detail-row"><span class="text-gray-500">${sl('open')}</span><span class="text-gray-300">${fmt(idx.open)}</span></div>
+          <div class="detail-row"><span class="text-gray-500">${sl('high')}</span><span class="text-gray-300">${fmt(idx.high)}</span></div>
+          <div class="detail-row"><span class="text-gray-500">${sl('low')}</span><span class="text-gray-300">${fmt(idx.low)}</span></div>
+          <div class="detail-row"><span class="text-gray-500">${sl('prevClose')}</span><span class="text-gray-300">${fmt(idx.prev_close)}</span></div>
+        </div>
+      </div>
+    `;
+    }
+
+    // ── Build summary bar ──
+    function buildSummary(indices) {
+        const bar = document.getElementById('summary-bar');
+        const lang = getLang();
+        let html = '<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 text-center">';
+        indices.forEach(function (idx) {
+            const isUp = idx.change >= 0;
+            const colorClass = isUp ? 'price-up' : 'price-down';
+            const sign = isUp ? '+' : '';
+            const name = lang === 'en' ? idx.name_en : idx.name_zh;
+            html += `
+        <div class="py-1">
+          <div class="text-[11px] text-gray-500 mb-1">${idx.flag} ${name}</div>
+          <div class="text-sm font-semibold text-white">${fmt(idx.price)}</div>
+          <div class="text-xs ${colorClass}">${sign}${idx.change_pct}%</div>
+        </div>
+      `;
+        });
+        html += '</div>';
+        bar.innerHTML = html;
+        bar.classList.remove('hidden');
+    }
+
+    // ── Load data ──
+    let cachedData = null;
+
+    function loadData() {
+        const container = document.getElementById('cards-container');
+        const errorMsg = document.getElementById('error-msg');
+        const refreshIcon = document.getElementById('refresh-icon');
+        const updatedEl = document.getElementById('last-updated');
+
+        // Show loading
+        refreshIcon.classList.add('spin');
+        errorMsg.classList.add('hidden');
+        updatedEl.textContent = sl('loading');
+
+        // If no cached data, show skeletons
+        if (!cachedData) {
+            container.innerHTML = `
+        ${[1, 2, 3].map(() => `
+          <div class="glass rounded-2xl p-6">
+            <div class="skeleton h-5 w-32 mb-4"></div>
+            <div class="skeleton h-8 w-48 mb-3"></div>
+            <div class="skeleton h-4 w-24 mb-6"></div>
+            <div class="skeleton h-16 w-full mb-4"></div>
+            <div class="skeleton h-3 w-full mb-2"></div>
+            <div class="skeleton h-3 w-full mb-2"></div>
+            <div class="skeleton h-3 w-3/4"></div>
+          </div>
+        `).join('')}
+      `;
+        }
+
+        fetch('/stock_market/api/indices/')
+            .then(r => r.json())
+            .then(function (data) {
+                refreshIcon.classList.remove('spin');
+
+                if (data.status !== 'ok' || !data.indices || data.indices.length === 0) {
+                    throw new Error('No data');
+                }
+
+                cachedData = data.indices;
+
+                // Build cards
+                container.innerHTML = data.indices.map(buildCard).join('');
+
+                // Draw sparklines after DOM update
+                requestAnimationFrame(function () {
+                    data.indices.forEach(function (idx) {
+                        const canvasId = 'spark-' + idx.symbol.replace('^', '');
+                        const canvas = document.getElementById(canvasId);
+                        if (canvas && idx.sparkline && idx.sparkline.length > 1) {
+                            drawSparkline(canvas, idx.sparkline, idx.change >= 0);
+                        }
+                    });
+                });
+
+                // Summary bar
+                buildSummary(data.indices);
+
+                // Update timestamp
+                const now = new Date();
+                updatedEl.textContent = sl('updated') + ' ' + now.toLocaleTimeString();
+            })
+            .catch(function (err) {
+                refreshIcon.classList.remove('spin');
+                if (!cachedData) {
+                    container.innerHTML = '';
+                    errorMsg.classList.remove('hidden');
+                }
+                updatedEl.textContent = '⚠️ ' + err.message;
+                console.error('Stock data fetch error:', err);
+            });
+    }
+
+    // ── Init ──
+    loadData();
+
+    // Re-render on language change
+    document.addEventListener('langchange', function () {
+        if (cachedData) {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = cachedData.map(buildCard).join('');
+            requestAnimationFrame(function () {
+                cachedData.forEach(function (idx) {
+                    const canvasId = 'spark-' + idx.symbol.replace('^', '');
+                    const canvas = document.getElementById(canvasId);
+                    if (canvas && idx.sparkline && idx.sparkline.length > 1) {
+                        drawSparkline(canvas, idx.sparkline, idx.change >= 0);
+                    }
+                });
+            });
+            buildSummary(cachedData);
+        }
+    });
+</script>
+{% endblock %}

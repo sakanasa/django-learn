@@ -1,6 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="zh-Hant">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -33,7 +34,9 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
 
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
@@ -48,27 +51,47 @@
       animation: float 20s infinite ease-in-out;
       pointer-events: none;
     }
+
     .blob-1 {
-      width: 600px; height: 600px;
+      width: 600px;
+      height: 600px;
       background: #F2A7C3;
-      top: -200px; left: -100px;
+      top: -200px;
+      left: -100px;
     }
+
     .blob-2 {
-      width: 500px; height: 500px;
+      width: 500px;
+      height: 500px;
       background: #A8D8EA;
-      top: 50%; right: -150px;
+      top: 50%;
+      right: -150px;
       animation-delay: -7s;
     }
+
     .blob-3 {
-      width: 400px; height: 400px;
+      width: 400px;
+      height: 400px;
       background: #C3ABE4;
-      bottom: -100px; left: 30%;
+      bottom: -100px;
+      left: 30%;
       animation-delay: -14s;
     }
+
     @keyframes float {
-      0%, 100% { transform: translate(0, 0) scale(1); }
-      33% { transform: translate(30px, -50px) scale(1.05); }
-      66% { transform: translate(-20px, 30px) scale(0.95); }
+
+      0%,
+      100% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      33% {
+        transform: translate(30px, -50px) scale(1.05);
+      }
+
+      66% {
+        transform: translate(-20px, 30px) scale(0.95);
+      }
     }
 
     /* ===== Glassmorphism ===== */
@@ -91,6 +114,7 @@
     .card-glow {
       transition: box-shadow 0.3s ease, transform 0.3s ease;
     }
+
     .card-glow:hover {
       box-shadow:
         0 0 20px rgba(242, 167, 195, 0.15),
@@ -100,8 +124,14 @@
     }
 
     /* ===== Scrollbar ===== */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #1A1A2E; }
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #1A1A2E;
+    }
+
     ::-webkit-scrollbar-thumb {
       background: linear-gradient(180deg, #F2A7C3, #C3ABE4);
       border-radius: 3px;
@@ -111,6 +141,7 @@
     .nav-link-hover {
       position: relative;
     }
+
     .nav-link-hover::after {
       content: '';
       position: absolute;
@@ -121,6 +152,7 @@
       background: linear-gradient(90deg, #F2A7C3, #A8D8EA);
       transition: width 0.3s ease;
     }
+
     .nav-link-hover:hover::after {
       width: 100%;
     }
@@ -131,13 +163,17 @@
       width: 52px;
       height: 26px;
       border-radius: 13px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       cursor: pointer;
       transition: background 0.3s;
       flex-shrink: 0;
     }
-    .lang-toggle:hover { background: rgba(255,255,255,0.12); }
+
+    .lang-toggle:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
     .lang-toggle-knob {
       position: absolute;
       top: 2px;
@@ -154,7 +190,10 @@
       font-weight: 700;
       color: #1A1A2E;
     }
-    .lang-toggle-knob.en { transform: translateX(26px); }
+
+    .lang-toggle-knob.en {
+      transform: translateX(26px);
+    }
   </style>
 
   {% block extra_head %}{% endblock %}
@@ -182,7 +221,7 @@
         <!-- Desktop Nav Links -->
         <div class="hidden md:flex items-center gap-8">
           <a href="{% url 'home_page:index' %}"
-             class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-pink transition-colors">
+            class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-pink transition-colors">
             <i class="fas fa-home mr-1"></i> <span data-i18n="nav.home">首頁</span>
           </a>
           <!-- WS Tools Dropdown -->
@@ -211,16 +250,20 @@
           </div>
 
           <a href="{% url 'journal:list' %}"
-             class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-lavender transition-colors">
+            class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-lavender transition-colors">
             <i class="fas fa-book-open mr-1"></i> <span data-i18n="nav.journal">日誌</span>
           </a>
           <a href="{% url 'color_palette:index' %}"
-             class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-blue transition-colors">
+            class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-blue transition-colors">
             <i class="fas fa-palette mr-1"></i> <span data-i18n="nav.color_palette">調色盤</span>
           </a>
           <a href="{% url 'pomodoro:index' %}"
-             class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-lavender transition-colors">
+            class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-lavender transition-colors">
             <i class="fas fa-clock mr-1"></i> <span data-i18n="nav.pomodoro">番茄鐘</span>
+          </a>
+          <a href="{% url 'stock_market:dashboard' %}"
+            class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-blue transition-colors">
+            <i class="fas fa-chart-line mr-1"></i> <span data-i18n="nav.stock_market">股市</span>
           </a>
 
           <!-- Language Toggle -->
@@ -232,13 +275,11 @@
           <div class="h-4 w-px bg-white/10"></div>
           {% if user.is_authenticated %}
           <span class="text-xs text-gray-500"><i class="fas fa-user mr-1"></i>{{ user.username }}</span>
-          <a href="{% url 'logout' %}"
-             class="text-xs text-gray-400 hover:text-cyrene-pink transition-colors">
+          <a href="{% url 'logout' %}" class="text-xs text-gray-400 hover:text-cyrene-pink transition-colors">
             <span data-i18n="nav.logout">登出</span>
           </a>
           {% else %}
-          <a href="{% url 'login' %}"
-             class="text-xs px-3 py-1.5 rounded-lg border border-cyrene-pink/30 text-cyrene-pink
+          <a href="{% url 'login' %}" class="text-xs px-3 py-1.5 rounded-lg border border-cyrene-pink/30 text-cyrene-pink
                     hover:bg-cyrene-pink/10 transition-colors">
             <i class="fas fa-sign-in-alt mr-1"></i> <span data-i18n="nav.login">登入</span>
           </a>
@@ -259,7 +300,7 @@
       <!-- Mobile Menu -->
       <div id="mobile-menu" class="hidden md:hidden pb-4 space-y-2">
         <a href="{% url 'home_page:index' %}"
-           class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-pink hover:bg-white/5 transition-colors">
+          class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-pink hover:bg-white/5 transition-colors">
           <i class="fas fa-home mr-2"></i> <span data-i18n="nav.home">首頁</span>
         </a>
         <!-- WS Tools Mobile Sub-menu -->
@@ -271,42 +312,46 @@
           </button>
           <div id="ws-tools-mobile-menu" class="hidden pl-6 space-y-1 mt-1">
             <a href="{% url 'pie_chart:dashboard' %}"
-               class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-blue hover:bg-white/5 transition-colors text-sm">
+              class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-blue hover:bg-white/5 transition-colors text-sm">
               <i class="fas fa-chart-pie mr-2"></i> <span data-i18n="nav.deck_stats">牌組統計</span>
             </a>
             <a href="{% url 'deck_analysis:index' %}"
-               class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-pink hover:bg-white/5 transition-colors text-sm">
+              class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-pink hover:bg-white/5 transition-colors text-sm">
               <i class="fas fa-brain mr-2"></i> <span data-i18n="nav.deck_ai">牌組AI分析</span>
             </a>
             <a href="{% url 'deck_showcase:showcase' %}"
-               class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-lavender hover:bg-white/5 transition-colors text-sm">
+              class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-lavender hover:bg-white/5 transition-colors text-sm">
               <i class="fas fa-image mr-2"></i> <span data-i18n="nav.showcase">展示圖</span>
             </a>
           </div>
         </div>
 
         <a href="{% url 'journal:list' %}"
-           class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-lavender hover:bg-white/5 transition-colors">
+          class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-lavender hover:bg-white/5 transition-colors">
           <i class="fas fa-book-open mr-2"></i> <span data-i18n="nav.journal">日誌</span>
         </a>
         <a href="{% url 'color_palette:index' %}"
-           class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-blue hover:bg-white/5 transition-colors">
+          class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-blue hover:bg-white/5 transition-colors">
           <i class="fas fa-palette mr-2"></i> <span data-i18n="nav.color_palette">調色盤</span>
         </a>
         <a href="{% url 'pomodoro:index' %}"
-           class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-lavender hover:bg-white/5 transition-colors">
+          class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-lavender hover:bg-white/5 transition-colors">
           <i class="fas fa-clock mr-2"></i> <span data-i18n="nav.pomodoro">番茄鐘</span>
+        </a>
+        <a href="{% url 'stock_market:dashboard' %}"
+          class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-blue hover:bg-white/5 transition-colors">
+          <i class="fas fa-chart-line mr-2"></i> <span data-i18n="nav.stock_market">股市</span>
         </a>
         <div class="border-t border-white/5 pt-2 mt-2">
           {% if user.is_authenticated %}
           <span class="block px-3 py-1 text-xs text-gray-500"><i class="fas fa-user mr-1"></i>{{ user.username }}</span>
           <a href="{% url 'logout' %}"
-             class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-pink hover:bg-white/5 transition-colors">
+            class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-pink hover:bg-white/5 transition-colors">
             <i class="fas fa-sign-out-alt mr-2"></i> <span data-i18n="nav.logout">登出</span>
           </a>
           {% else %}
           <a href="{% url 'login' %}"
-             class="block px-3 py-2 rounded-lg text-cyrene-pink hover:bg-white/5 transition-colors">
+            class="block px-3 py-2 rounded-lg text-cyrene-pink hover:bg-white/5 transition-colors">
             <i class="fas fa-sign-in-alt mr-2"></i> <span data-i18n="nav.login">登入</span>
           </a>
           {% endif %}
@@ -335,7 +380,7 @@
   <script>
     const I18N = {
       zh: {
-        'nav.home': '首頁', 'nav.ws_tools': 'WS工具', 'nav.deck_stats': '牌組統計', 'nav.journal': '日誌', 'nav.color_palette': '調色盤', 'nav.pomodoro': '番茄鐘', 'nav.deck_ai': '牌組AI分析', 'nav.showcase': '展示圖',
+        'nav.home': '首頁', 'nav.ws_tools': 'WS工具', 'nav.deck_stats': '牌組統計', 'nav.journal': '日誌', 'nav.color_palette': '調色盤', 'nav.pomodoro': '番茄鐘', 'nav.deck_ai': '牌組AI分析', 'nav.showcase': '展示圖', 'nav.stock_market': '股市',
         'nav.login': '登入', 'nav.logout': '登出', 'nav.language': '語言',
         'footer.built_with': '用', 'footer.built_suffix': '打造',
         'home.subtitle': '夢幻般的工具與專案集合。\n探索下方的模組開始使用。',
@@ -376,6 +421,14 @@
         'deck_showcase.bg_color': '顏色', 'deck_showcase.bg_color1': '顏色 1', 'deck_showcase.bg_color2': '顏色 2',
         'deck_showcase.bg_direction': '方向', 'deck_showcase.bg_direction_h': '水平', 'deck_showcase.bg_direction_v': '垂直', 'deck_showcase.bg_direction_d': '對角',
         'deck_showcase.bg_blur': '模糊',
+        'home.deck_showcase_title': '牌組展示圖', 'home.deck_showcase_desc': '選擇想展示的卡牌，自訂背景與排列，生成精美的扇形展示圖。支援多種來源與玩家資訊。',
+        'home.about_name': 'Sakanasa', 'home.about_role': '全端開發者',
+        'home.about_bio': '熱愛用程式解決問題的開發者。擅長 Python 後端開發與資料自動化，喜歡把實用的想法做成方便的小工具。這個工坊收錄了我在學習 Django 過程中打造的各種專案。',
+        'home.stat_projects': '個專案模組', 'home.stat_ws_tools': '個 WS 工具', 'home.stat_libraries': '個套件整合',
+        'home.projects_title': '專案模組', 'home.tech_stack_title': '技術堆疊',
+        'home.stock_title': '股市指數儀表板', 'home.stock_desc': '即時追蹤美股與台股主要指數。查看 S&P 500、NASDAQ、道璩、台灣加權、費半等趨勢圖與漲跌幅。',
+        'stock.title': '股市指數儀表板', 'stock.subtitle': '即時追蹤美股與台股主要指數',
+        'stock.refresh': '重新整理', 'stock.loading': '載入中...', 'stock.error': '資料載入失敗，請稍後再試。', 'stock.retry': '重試',
         'home.coming_soon': '敬請期待', 'home.coming_soon_desc': '新的模組和工具將會在此出現。',
         'pomo.title': '番茄鐘計時器', 'pomo.focus': '專注', 'pomo.short_break': '短休息', 'pomo.long_break': '長休息',
         'pomo.start': '開始', 'pomo.pause': '暫停', 'pomo.reset': '重置', 'pomo.skip': '跳過',
@@ -419,7 +472,7 @@
         'login.username_placeholder': '帳號', 'login.password_placeholder': '密碼',
       },
       en: {
-        'nav.home': 'Home', 'nav.ws_tools': 'WS Tools', 'nav.deck_stats': 'Deck Stats', 'nav.journal': 'Journal', 'nav.color_palette': 'Color Palette', 'nav.pomodoro': 'Pomodoro', 'nav.deck_ai': 'Deck AI', 'nav.showcase': 'Showcase',
+        'nav.home': 'Home', 'nav.ws_tools': 'WS Tools', 'nav.deck_stats': 'Deck Stats', 'nav.journal': 'Journal', 'nav.color_palette': 'Color Palette', 'nav.pomodoro': 'Pomodoro', 'nav.deck_ai': 'Deck AI', 'nav.showcase': 'Showcase', 'nav.stock_market': 'Markets',
         'nav.login': 'Login', 'nav.logout': 'Logout', 'nav.language': 'Language',
         'footer.built_with': 'Built with', 'footer.built_suffix': '',
         'home.subtitle': 'A dreamy collection of tools and projects.\nExplore the modules below to get started.',
@@ -460,6 +513,14 @@
         'deck_showcase.bg_color': 'Color', 'deck_showcase.bg_color1': 'Color 1', 'deck_showcase.bg_color2': 'Color 2',
         'deck_showcase.bg_direction': 'Direction', 'deck_showcase.bg_direction_h': 'Horizontal', 'deck_showcase.bg_direction_v': 'Vertical', 'deck_showcase.bg_direction_d': 'Diagonal',
         'deck_showcase.bg_blur': 'Blur',
+        'home.deck_showcase_title': 'Deck Showcase', 'home.deck_showcase_desc': 'Select cards to showcase, customize background & layout, and generate a beautiful fan-spread image. Multiple sources supported.',
+        'home.about_name': 'Sakanasa', 'home.about_role': 'Full-Stack Developer',
+        'home.about_bio': 'A developer who loves solving problems with code. Skilled in Python backend development and data automation. This workshop collects various projects I built while learning Django.',
+        'home.stat_projects': 'Project Modules', 'home.stat_ws_tools': 'WS Tools', 'home.stat_libraries': 'Libraries Used',
+        'home.projects_title': 'Projects', 'home.tech_stack_title': 'Tech Stack',
+        'home.stock_title': 'Stock Market Dashboard', 'home.stock_desc': 'Track major US & Taiwan stock indices in real-time. View S&P 500, NASDAQ, Dow Jones, TAIEX, and PHLX Semiconductor trends & changes.',
+        'stock.title': 'Stock Market Dashboard', 'stock.subtitle': 'Track major US & Taiwan stock indices in real-time',
+        'stock.refresh': 'Refresh', 'stock.loading': 'Loading...', 'stock.error': 'Failed to load data. Please try again later.', 'stock.retry': 'Retry',
         'home.coming_soon': 'Coming Soon', 'home.coming_soon_desc': 'New modules and tools will appear here as they are built. Stay tuned.',
         'pomo.title': 'Pomodoro Timer', 'pomo.focus': 'Focus', 'pomo.short_break': 'Short Break', 'pomo.long_break': 'Long Break',
         'pomo.start': 'Start', 'pomo.pause': 'Pause', 'pomo.reset': 'Reset', 'pomo.skip': 'Skip',
@@ -518,18 +579,18 @@
 
     function applyLang(lang) {
       document.documentElement.lang = lang === 'zh' ? 'zh-Hant' : 'en';
-      document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      document.querySelectorAll('[data-i18n]').forEach(function (el) {
         const key = el.getAttribute('data-i18n');
         const text = I18N[lang] && I18N[lang][key];
         if (text !== undefined) el.textContent = text;
       });
-      document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
         const key = el.getAttribute('data-i18n-placeholder');
         const text = I18N[lang] && I18N[lang][key];
         if (text !== undefined) el.placeholder = text;
       });
       var label = lang === 'zh' ? '中' : 'EN';
-      document.querySelectorAll('.lang-toggle-knob').forEach(function(knob) {
+      document.querySelectorAll('.lang-toggle-knob').forEach(function (knob) {
         knob.textContent = label;
         if (lang === 'en') knob.classList.add('en');
         else knob.classList.remove('en');
@@ -537,10 +598,10 @@
       document.dispatchEvent(new CustomEvent('langchange', { detail: { lang: lang } }));
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       applyLang(getLang());
-      document.querySelectorAll('.lang-toggle').forEach(function(toggle) {
-        toggle.addEventListener('click', function() {
+      document.querySelectorAll('.lang-toggle').forEach(function (toggle) {
+        toggle.addEventListener('click', function () {
           setLang(getLang() === 'zh' ? 'en' : 'zh');
         });
       });
@@ -549,41 +610,41 @@
 
   <!-- Mobile Menu Toggle + WS Tools Dropdown -->
   <script>
-    document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+    document.getElementById('mobile-menu-btn').addEventListener('click', function () {
       var menu = document.getElementById('mobile-menu');
       menu.classList.toggle('hidden');
     });
 
     // Desktop WS Tools dropdown
-    (function() {
+    (function () {
       var btn = document.getElementById('ws-tools-btn');
       var menu = document.getElementById('ws-tools-menu');
       var chevron = document.getElementById('ws-tools-chevron');
       if (!btn || !menu) return;
 
-      btn.addEventListener('click', function(e) {
+      btn.addEventListener('click', function (e) {
         e.stopPropagation();
         var open = !menu.classList.contains('hidden');
         menu.classList.toggle('hidden');
         chevron.style.transform = open ? '' : 'rotate(180deg)';
       });
 
-      document.addEventListener('click', function() {
+      document.addEventListener('click', function () {
         menu.classList.add('hidden');
         chevron.style.transform = '';
       });
 
-      menu.addEventListener('click', function(e) { e.stopPropagation(); });
+      menu.addEventListener('click', function (e) { e.stopPropagation(); });
     })();
 
     // Mobile WS Tools sub-menu
-    (function() {
+    (function () {
       var btn = document.getElementById('ws-tools-mobile-btn');
       var menu = document.getElementById('ws-tools-mobile-menu');
       var chevron = document.getElementById('ws-tools-mobile-chevron');
       if (!btn || !menu) return;
 
-      btn.addEventListener('click', function() {
+      btn.addEventListener('click', function () {
         var open = !menu.classList.contains('hidden');
         menu.classList.toggle('hidden');
         chevron.style.transform = open ? '' : 'rotate(180deg)';
@@ -593,4 +654,5 @@
 
   {% block extra_js %}{% endblock %}
 </body>
+
 </html>
