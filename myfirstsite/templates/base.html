@@ -137,6 +137,92 @@
       border-radius: 3px;
     }
 
+    /* ===== Unified Button System =====
+     *
+     * Usage: class="btn btn-{size} btn-{variant}"
+     *
+     * Sizes:   btn-sm  (xs text, small padding — inline/nav actions)
+     *          btn-md  (sm text, normal padding — form actions)
+     *          btn-lg  (base text, large padding — hero CTAs)
+     *
+     * Variants: btn-primary   — gradient fill  (main submit / CTA)
+     *           btn-secondary — subtle outline  (cancel / back)
+     *           btn-ghost     — pink outline    (edit / admin inline)
+     *           btn-danger    — red outline     (destructive actions)
+     * ========================================= */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+      line-height: 1;
+    }
+
+    /* -- Sizes -- */
+    .btn-sm {
+      padding: 0.375rem 0.875rem;
+      font-size: 0.75rem;
+      border-radius: 0.5rem;
+    }
+    .btn-md {
+      padding: 0.625rem 1.5rem;
+      font-size: 0.875rem;
+      border-radius: 0.75rem;
+    }
+    .btn-lg {
+      padding: 0.75rem 2rem;
+      font-size: 1rem;
+      border-radius: 0.75rem;
+    }
+
+    /* -- Variants -- */
+    .btn-primary {
+      color: white;
+      font-weight: 600;
+      background-image: linear-gradient(to right, #F2A7C3, #C3ABE4, #A8D8EA);
+      border-color: transparent;
+      box-shadow: 0 2px 12px rgba(195, 171, 228, 0.2);
+    }
+    .btn-primary:hover  { opacity: 0.88; }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .btn-secondary {
+      color: #9ca3af;
+      border-color: rgba(255, 255, 255, 0.12);
+      background: transparent;
+    }
+    .btn-secondary:hover {
+      color: #e5e7eb;
+      border-color: rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .btn-ghost {
+      color: #F2A7C3;
+      border-color: rgba(242, 167, 195, 0.3);
+      background: transparent;
+    }
+    .btn-ghost:hover {
+      border-color: rgba(242, 167, 195, 0.5);
+      background: rgba(242, 167, 195, 0.08);
+    }
+
+    .btn-danger {
+      color: #fca5a5;
+      border-color: rgba(252, 165, 165, 0.2);
+      background: transparent;
+    }
+    .btn-danger:hover {
+      color: #f87171;
+      border-color: rgba(248, 113, 113, 0.4);
+      background: rgba(248, 113, 113, 0.08);
+    }
+
     /* ===== Nav Link Hover Underline ===== */
     .nav-link-hover {
       position: relative;
@@ -261,10 +347,25 @@
             class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-lavender transition-colors">
             <i class="fas fa-clock mr-1"></i> <span data-i18n="nav.pomodoro">番茄鐘</span>
           </a>
-          <a href="{% url 'stock_market:dashboard' %}"
-            class="nav-link-hover text-sm font-medium text-gray-300 hover:text-cyrene-blue transition-colors">
-            <i class="fas fa-chart-line mr-1"></i> <span data-i18n="nav.stock_market">股市</span>
-          </a>
+          <div class="relative" id="finance-dropdown">
+            <button type="button" id="finance-btn"
+              class="flex items-center gap-1 text-sm font-medium text-gray-300 hover:text-cyrene-blue transition-colors">
+              <i class="fas fa-chart-line mr-1"></i>
+              <span data-i18n="nav.finance_market">金融市場</span>
+              <i class="fas fa-chevron-down text-[10px] ml-0.5 transition-transform" id="finance-chevron"></i>
+            </button>
+            <div id="finance-menu"
+              class="hidden absolute top-full left-0 mt-2 w-44 glass rounded-xl py-1 z-50 border border-white/10 shadow-xl">
+              <a href="{% url 'stock_market:dashboard' %}"
+                class="block px-4 py-2 text-sm text-gray-300 hover:text-cyrene-blue hover:bg-white/5 transition-colors">
+                <i class="fas fa-chart-line mr-2 w-4 text-center"></i><span data-i18n="nav.stock_market">股市指數</span>
+              </a>
+              <a href="{% url 'finance_brief:dashboard' %}"
+                class="block px-4 py-2 text-sm text-gray-300 hover:text-cyrene-pink hover:bg-white/5 transition-colors">
+                <i class="fas fa-newspaper mr-2 w-4 text-center"></i><span data-i18n="nav.finance_brief">今日金融快報</span>
+              </a>
+            </div>
+          </div>
 
           <!-- Language Toggle -->
           <div class="lang-toggle" id="lang-toggle" title="切換語言 / Switch Language">
@@ -279,9 +380,8 @@
             <span data-i18n="nav.logout">登出</span>
           </a>
           {% else %}
-          <a href="{% url 'login' %}" class="text-xs px-3 py-1.5 rounded-lg border border-cyrene-pink/30 text-cyrene-pink
-                    hover:bg-cyrene-pink/10 transition-colors">
-            <i class="fas fa-sign-in-alt mr-1"></i> <span data-i18n="nav.login">登入</span>
+          <a href="{% url 'login' %}" class="btn btn-sm btn-ghost">
+            <i class="fas fa-sign-in-alt"></i> <span data-i18n="nav.login">登入</span>
           </a>
           {% endif %}
         </div>
@@ -338,10 +438,21 @@
           class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-lavender hover:bg-white/5 transition-colors">
           <i class="fas fa-clock mr-2"></i> <span data-i18n="nav.pomodoro">番茄鐘</span>
         </a>
-        <a href="{% url 'stock_market:dashboard' %}"
-          class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-blue hover:bg-white/5 transition-colors">
-          <i class="fas fa-chart-line mr-2"></i> <span data-i18n="nav.stock_market">股市</span>
-        </a>
+        <div>
+          <button type="button" id="finance-mobile-btn"
+            class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-blue hover:bg-white/5 transition-colors">
+            <span><i class="fas fa-chart-line mr-2"></i> <span data-i18n="nav.finance_market">金融市場</span></span>
+            <i class="fas fa-chevron-down text-[10px] transition-transform" id="finance-mobile-chevron"></i>
+          </button>
+          <div id="finance-mobile-menu" class="hidden pl-6 space-y-1 mt-1">
+            <a href="{% url 'stock_market:dashboard' %}" class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-blue hover:bg-white/5 transition-colors text-sm">
+              <i class="fas fa-chart-line mr-2"></i> <span data-i18n="nav.stock_market">股市指數</span>
+            </a>
+            <a href="{% url 'finance_brief:dashboard' %}" class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-pink hover:bg-white/5 transition-colors text-sm">
+              <i class="fas fa-newspaper mr-2"></i> <span data-i18n="nav.finance_brief">今日金融快報</span>
+            </a>
+          </div>
+        </div>
         <div class="border-t border-white/5 pt-2 mt-2">
           {% if user.is_authenticated %}
           <span class="block px-3 py-1 text-xs text-gray-500"><i class="fas fa-user mr-1"></i>{{ user.username }}</span>
@@ -380,7 +491,7 @@
   <script>
     const I18N = {
       zh: {
-        'nav.home': '首頁', 'nav.ws_tools': 'WS工具', 'nav.deck_stats': '牌組統計', 'nav.journal': '日誌', 'nav.color_palette': '調色盤', 'nav.pomodoro': '番茄鐘', 'nav.deck_ai': '牌組AI分析', 'nav.showcase': '展示圖', 'nav.stock_market': '股市',
+        'nav.home': '首頁', 'nav.ws_tools': 'WS工具', 'nav.deck_stats': '牌組統計', 'nav.journal': '日誌', 'nav.color_palette': '調色盤', 'nav.pomodoro': '番茄鐘', 'nav.deck_ai': '牌組AI分析', 'nav.showcase': '展示圖', 'nav.finance_market': '金融市場', 'nav.stock_market': '股市指數', 'nav.finance_brief': '今日金融快報',
         'nav.login': '登入', 'nav.logout': '登出', 'nav.language': '語言',
         'footer.built_with': '用', 'footer.built_suffix': '打造',
         'home.subtitle': '夢幻般的工具與專案集合。\n探索下方的模組開始使用。',
@@ -427,6 +538,7 @@
         'home.stat_projects': '個專案模組', 'home.stat_ws_tools': '個 WS 工具', 'home.stat_libraries': '個套件整合',
         'home.projects_title': '專案模組', 'home.tech_stack_title': '技術堆疊',
         'home.stock_title': '股市指數儀表板', 'home.stock_desc': '即時追蹤美股與台股主要指數。查看 S&P 500、NASDAQ、道璩、台灣加權、費半等趨勢圖與漲跌幅。',
+        'home.finance_brief_title': '今日金融快報', 'home.finance_brief_desc': '每日自動聚合股票指數、外匯、大宗商品與財經新聞，由 AI 生成繁體中文市場總覽。',
         'stock.title': '股市指數儀表板', 'stock.subtitle': '即時追蹤美股與台股主要指數',
         'stock.refresh': '重新整理', 'stock.loading': '載入中...', 'stock.error': '資料載入失敗，請稍後再試。', 'stock.retry': '重試',
         'home.coming_soon': '敬請期待', 'home.coming_soon_desc': '新的模組和工具將會在此出現。',
@@ -472,7 +584,7 @@
         'login.username_placeholder': '帳號', 'login.password_placeholder': '密碼',
       },
       en: {
-        'nav.home': 'Home', 'nav.ws_tools': 'WS Tools', 'nav.deck_stats': 'Deck Stats', 'nav.journal': 'Journal', 'nav.color_palette': 'Color Palette', 'nav.pomodoro': 'Pomodoro', 'nav.deck_ai': 'Deck AI', 'nav.showcase': 'Showcase', 'nav.stock_market': 'Markets',
+        'nav.home': 'Home', 'nav.ws_tools': 'WS Tools', 'nav.deck_stats': 'Deck Stats', 'nav.journal': 'Journal', 'nav.color_palette': 'Color Palette', 'nav.pomodoro': 'Pomodoro', 'nav.deck_ai': 'Deck AI', 'nav.showcase': 'Showcase', 'nav.finance_market': 'Markets', 'nav.stock_market': 'Stock Indices', 'nav.finance_brief': 'Finance Brief',
         'nav.login': 'Login', 'nav.logout': 'Logout', 'nav.language': 'Language',
         'footer.built_with': 'Built with', 'footer.built_suffix': '',
         'home.subtitle': 'A dreamy collection of tools and projects.\nExplore the modules below to get started.',
@@ -519,6 +631,7 @@
         'home.stat_projects': 'Project Modules', 'home.stat_ws_tools': 'WS Tools', 'home.stat_libraries': 'Libraries Used',
         'home.projects_title': 'Projects', 'home.tech_stack_title': 'Tech Stack',
         'home.stock_title': 'Stock Market Dashboard', 'home.stock_desc': 'Track major US & Taiwan stock indices in real-time. View S&P 500, NASDAQ, Dow Jones, TAIEX, and PHLX Semiconductor trends & changes.',
+        'home.finance_brief_title': 'Finance Brief', 'home.finance_brief_desc': 'Daily aggregation of stock indices, FX, commodities, and financial news. AI generates a Traditional Chinese market overview.',
         'stock.title': 'Stock Market Dashboard', 'stock.subtitle': 'Track major US & Taiwan stock indices in real-time',
         'stock.refresh': 'Refresh', 'stock.loading': 'Loading...', 'stock.error': 'Failed to load data. Please try again later.', 'stock.retry': 'Retry',
         'home.coming_soon': 'Coming Soon', 'home.coming_soon_desc': 'New modules and tools will appear here as they are built. Stay tuned.',
@@ -642,6 +755,42 @@
       var btn = document.getElementById('ws-tools-mobile-btn');
       var menu = document.getElementById('ws-tools-mobile-menu');
       var chevron = document.getElementById('ws-tools-mobile-chevron');
+      if (!btn || !menu) return;
+
+      btn.addEventListener('click', function () {
+        var open = !menu.classList.contains('hidden');
+        menu.classList.toggle('hidden');
+        chevron.style.transform = open ? '' : 'rotate(180deg)';
+      });
+    })();
+
+    // Desktop Finance dropdown
+    (function () {
+      var btn = document.getElementById('finance-btn');
+      var menu = document.getElementById('finance-menu');
+      var chevron = document.getElementById('finance-chevron');
+      if (!btn || !menu) return;
+
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var open = !menu.classList.contains('hidden');
+        menu.classList.toggle('hidden');
+        chevron.style.transform = open ? '' : 'rotate(180deg)';
+      });
+
+      document.addEventListener('click', function () {
+        menu.classList.add('hidden');
+        chevron.style.transform = '';
+      });
+
+      menu.addEventListener('click', function (e) { e.stopPropagation(); });
+    })();
+
+    // Mobile Finance sub-menu
+    (function () {
+      var btn = document.getElementById('finance-mobile-btn');
+      var menu = document.getElementById('finance-mobile-menu');
+      var chevron = document.getElementById('finance-mobile-chevron');
       if (!btn || !menu) return;
 
       btn.addEventListener('click', function () {

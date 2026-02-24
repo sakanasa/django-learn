@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block title %}今日金融快報 - Workshop{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Skeleton shimmer ── */
+  .skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    border-radius: 6px;
+  }
+  @keyframes skeleton-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ── Color mode ── */
+  .price-up      { color: #34D399; }
+  .price-down    { color: #F87171; }
+  .price-neutral { color: #9CA3AF; }
+  .bg-up   { background: rgba(52,211,153,0.1);  border-color: rgba(52,211,153,0.2); }
+  .bg-down { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.2); }
+
+  body.color-tw .price-up   { color: #F87171; }
+  body.color-tw .price-down { color: #34D399; }
+  body.color-tw .bg-up   { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.2); }
+  body.color-tw .bg-down { background: rgba(52,211,153,0.1);  border-color: rgba(52,211,153,0.2); }
+
+  .active-mode { background: rgba(255,255,255,0.12); color: #fff; font-weight: 600; }
+
+  /* ── Card hover ── */
+  .data-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+  .data-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 20px rgba(195,171,228,0.1);
+  }
+
+  /* ── Markdown rendered LLM content ── */
+  .llm-content h2 {
+    font-size: 1.1rem; font-weight: 700; color: #A8D8EA;
+    margin-top: 1.25rem; margin-bottom: 0.5rem;
+    padding-bottom: 0.2rem; border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .llm-content h3 { font-size: 1rem; font-weight: 600; color: #C3ABE4; margin-top: 1rem; margin-bottom: 0.4rem; }
+  .llm-content p  { margin-bottom: 0.6rem; line-height: 1.75; color: #d1d5db; font-size: 0.9rem; }
+  .llm-content ul, .llm-content ol { margin-left: 1.5rem; margin-bottom: 0.6rem; color: #d1d5db; font-size: 0.9rem; }
+  .llm-content li { margin-bottom: 0.2rem; }
+  .llm-content strong { color: #e5e7eb; }
+  .llm-content table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-bottom: 0.75rem; }
+  .llm-content table th { background: rgba(255,255,255,0.05); padding: 0.4rem 0.6rem; text-align: left; color: #9ca3af; }
+  .llm-content table td { padding: 0.4rem 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.04); color: #d1d5db; }
+
+  /* ── Pulse dot ── */
+  .pulse-dot {
+    width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  .pulse-dot.online  { background: #34D399; }
+  .pulse-dot.offline { background: #F87171; animation: none; }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.4); }
+    50%       { box-shadow: 0 0 0 6px rgba(52,211,153,0); }
+  }
+
+  /* ── News item ── */
+  .news-item { transition: background 0.2s; }
+  .news-item:hover { background: rgba(255,255,255,0.04); }
+
+  /* ── LLM loading spinner ── */
+  .llm-spinner {
+    width: 20px; height: 20px; border: 2px solid rgba(168,216,234,0.2);
+    border-top-color: #A8D8EA; border-radius: 50%;
+    animation: spin 0.8s linear infinite; display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Header ── -->
+<section class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+  <div>
+    <h1 class="text-3xl sm:text-4xl font-display font-bold gradient-text">📊 今日金融快報</h1>
+    <p class="text-gray-400 text-sm mt-1">
+      {{ request.resolver_match.namespace }} &middot;
+      <span id="brief-date">—</span>
+    </p>
+  </div>
+
+  <div class="flex items-center gap-3 flex-wrap">
+    <!-- LLM status -->
+    <div class="flex items-center gap-2 text-xs text-gray-500">
+      <span class="pulse-dot {% if ollama_status.online %}online{% else %}offline{% endif %}"></span>
+      {% if ollama_status.online %}LLM 在線{% else %}LLM 離線{% endif %}
+    </div>
+
+    <!-- Color mode toggle -->
+    <div class="flex items-center gap-1 glass rounded-xl p-1 text-xs">
+      <button id="btn-color-us" onclick="setColorMode('us')"
+              class="px-2.5 py-1 rounded-lg transition-all text-gray-400">
+        🇺🇸 US
+      </button>
+      <button id="btn-color-tw" onclick="setColorMode('tw')"
+              class="px-2.5 py-1 rounded-lg transition-all text-gray-400">
+        🇹🇼 台
+      </button>
+    </div>
+
+    <!-- Cache indicator -->
+    <div id="cache-badge" class="hidden text-[10px] px-2 py-0.5 rounded-full border border-white/10 text-gray-500"></div>
+  </div>
+</section>
+
+<!-- ── LLM Summary Panel ── -->
+<section class="glass rounded-2xl p-6 mb-8 border border-white/5">
+  <div class="flex items-center gap-3 mb-4">
+    <span class="text-lg">✨</span>
+    <h2 class="text-base font-display font-semibold text-white">AI 市場分析</h2>
+    <span id="llm-status-tag" class="text-[10px] px-2 py-0.5 rounded-full bg-cyrene-blue/10 text-cyrene-blue border border-cyrene-blue/20">
+      生成中...
+    </span>
+  </div>
+
+  <!-- Skeleton loader for LLM -->
+  <div id="llm-skeleton">
+    <div class="skeleton h-4 w-3/4 mb-3"></div>
+    <div class="skeleton h-4 w-full mb-3"></div>
+    <div class="skeleton h-4 w-5/6 mb-3"></div>
+    <div class="skeleton h-4 w-2/3 mb-3"></div>
+    <div class="skeleton h-4 w-full mb-2"></div>
+    <div class="flex items-center gap-2 mt-4 text-sm text-cyrene-blue/60">
+      <span class="llm-spinner"></span>
+      <span>LLM 分析中，首次約需 30-60 秒（快取後即時）...</span>
+    </div>
+  </div>
+
+  <!-- LLM content -->
+  <div id="llm-content" class="llm-content hidden"></div>
+
+  <!-- LLM error -->
+  <div id="llm-error" class="hidden text-sm text-red-400 mt-2"></div>
+</section>
+
+<!-- ── Market Data Grid ── -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+
+  <!-- Indices -->
+  <div class="lg:col-span-1 glass rounded-2xl p-5 border border-white/5">
+    <h3 class="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
+      <span>📈</span> 股票指數
+    </h3>
+    <div id="indices-list">
+      <!-- Skeletons -->
+      {% for i in "1234567" %}
+      <div class="skeleton h-12 w-full mb-2 rounded-xl"></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- FX + Commodities stacked -->
+  <div class="lg:col-span-1 flex flex-col gap-6">
+    <!-- FX -->
+    <div class="glass rounded-2xl p-5 border border-white/5">
+      <h3 class="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
+        <span>💱</span> 外匯匯率
+      </h3>
+      <div id="fx-list">
+        {% for i in "123" %}
+        <div class="skeleton h-10 w-full mb-2 rounded-xl"></div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Commodities -->
+    <div class="glass rounded-2xl p-5 border border-white/5">
+      <h3 class="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
+        <span>🪙</span> 大宗商品
+      </h3>
+      <div id="commodities-list">
+        {% for i in "123" %}
+        <div class="skeleton h-10 w-full mb-2 rounded-xl"></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- News -->
+  <div class="lg:col-span-1 glass rounded-2xl p-5 border border-white/5">
+    <h3 class="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
+      <span>📰</span> 今日財經新聞
+    </h3>
+    <div id="news-list">
+      {% for i in "123456" %}
+      <div class="skeleton h-8 w-full mb-2 rounded-lg"></div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Market Error ── -->
+<div id="market-error" class="hidden glass rounded-2xl p-8 text-center mb-8">
+  <i class="fas fa-exclamation-triangle text-2xl text-cyrene-pink mb-3"></i>
+  <p class="text-gray-300 text-sm">市場數據載入失敗，請稍後重整頁面。</p>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- marked.js for Markdown rendering -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+// ── Color mode ──────────────────────────────────────────────────────────────
+function getColorMode() { return localStorage.getItem('stockColorMode') || 'us'; }
+
+function setColorMode(mode) {
+  localStorage.setItem('stockColorMode', mode);
+  applyColorMode(mode);
+}
+
+function applyColorMode(mode) {
+  document.body.classList.toggle('color-tw', mode === 'tw');
+  document.getElementById('btn-color-us').classList.toggle('active-mode', mode === 'us');
+  document.getElementById('btn-color-tw').classList.toggle('active-mode', mode === 'tw');
+  // Re-render market cards if data already loaded
+  if (window._cachedMarket) renderMarket(window._cachedMarket);
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function fmt(n, decimals) {
+  if (n === null || n === undefined) return '—';
+  decimals = (decimals !== undefined) ? decimals : 2;
+  return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function changeClasses(change) {
+  const up = change >= 0;
+  return {
+    color: up ? 'price-up' : (change < 0 ? 'price-down' : 'price-neutral'),
+    bg: up ? 'bg-up' : 'bg-down',
+    arrow: up ? '▲' : '▼',
+    sign: up ? '+' : '',
+  };
+}
+
+// ── Render market data ──────────────────────────────────────────────────────
+function renderMarket(data) {
+  const mode = getColorMode();
+
+  // Indices
+  const indicesEl = document.getElementById('indices-list');
+  if (data.indices && data.indices.length > 0) {
+    indicesEl.innerHTML = data.indices.map(item => {
+      const c = changeClasses(item.change);
+      const decimals = item.price > 1000 ? 2 : (item.price > 10 ? 2 : 4);
+      return `
+        <div class="data-card flex items-center justify-between rounded-xl px-3 py-2.5 mb-1.5 border border-white/5 ${c.bg}" style="border:1px solid;">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-base">${item.flag || ''}</span>
+            <span class="text-xs text-gray-300 truncate">${item.name}</span>
+          </div>
+          <div class="text-right flex-shrink-0 ml-2">
+            <div class="text-sm font-mono font-semibold text-white">${fmt(item.price, decimals)}</div>
+            <div class="${c.color} text-[10px]">${c.arrow} ${c.sign}${item.change_pct}%</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // FX
+  const fxEl = document.getElementById('fx-list');
+  if (data.fx && data.fx.length > 0) {
+    fxEl.innerHTML = data.fx.map(item => {
+      const c = changeClasses(item.change);
+      return `
+        <div class="data-card flex items-center justify-between rounded-xl px-3 py-2.5 mb-1.5 border border-white/5" style="background:rgba(255,255,255,0.02);">
+          <span class="text-xs text-gray-300">${item.name}</span>
+          <div class="text-right">
+            <span class="text-xs font-mono text-white">${fmt(item.price, 4)}</span>
+            <span class="${c.color} text-[10px] ml-2">${c.sign}${item.change_pct}%</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // Commodities
+  const commEl = document.getElementById('commodities-list');
+  if (data.commodities && data.commodities.length > 0) {
+    commEl.innerHTML = data.commodities.map(item => {
+      const c = changeClasses(item.change);
+      const decimals = item.price > 100 ? 2 : 4;
+      return `
+        <div class="data-card flex items-center justify-between rounded-xl px-3 py-2.5 mb-1.5 border border-white/5" style="background:rgba(255,255,255,0.02);">
+          <div>
+            <span class="text-xs text-gray-300">${item.name}</span>
+            <span class="text-[10px] text-gray-600 ml-1">${item.unit}</span>
+          </div>
+          <div class="text-right">
+            <span class="text-xs font-mono text-white">${fmt(item.price, decimals)}</span>
+            <span class="${c.color} text-[10px] ml-2">${c.sign}${item.change_pct}%</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+}
+
+// ── Render news ─────────────────────────────────────────────────────────────
+function renderNews(news) {
+  const newsEl = document.getElementById('news-list');
+  if (!news || news.length === 0) {
+    newsEl.innerHTML = '<p class="text-gray-600 text-xs">暫無新聞</p>';
+    return;
+  }
+  newsEl.innerHTML = news.map(item => `
+    <a href="${item.url}" target="_blank" rel="noopener"
+       class="news-item block rounded-lg px-2 py-2 mb-1 cursor-pointer">
+      <div class="text-[11px] text-gray-300 leading-tight line-clamp-2 mb-0.5">${item.title}</div>
+      <div class="text-[10px] text-gray-600">${item.source}${item.published ? ' · ' + item.published.substring(0, 16) : ''}</div>
+    </a>`).join('');
+}
+
+// ── Fetch market data ────────────────────────────────────────────────────────
+function fetchMarket() {
+  fetch("{% url 'finance_brief:api_market' %}")
+    .then(r => r.json())
+    .then(data => {
+      if (data.status !== 'ok') throw new Error('market data error');
+
+      window._cachedMarket = data.market_data;
+      document.getElementById('brief-date').textContent = data.date;
+
+      renderMarket(data.market_data);
+      renderNews(data.news);
+
+      const badge = document.getElementById('cache-badge');
+      badge.textContent = data.from_cache ? '📦 快取' : '🔄 即時';
+      badge.classList.remove('hidden');
+    })
+    .catch(err => {
+      console.error('Market fetch error:', err);
+      document.getElementById('market-error').classList.remove('hidden');
+    });
+}
+
+// ── Fetch LLM summary ────────────────────────────────────────────────────────
+function fetchSummary() {
+  fetch("{% url 'finance_brief:api_summary' %}")
+    .then(r => {
+      if (r.status === 202) {
+        // Market data not ready yet; retry after delay
+        setTimeout(fetchSummary, 5000);
+        return null;
+      }
+      return r.json();
+    })
+    .then(data => {
+      if (!data) return;
+      const skeleton = document.getElementById('llm-skeleton');
+      const content  = document.getElementById('llm-content');
+      const tag      = document.getElementById('llm-status-tag');
+      const errEl    = document.getElementById('llm-error');
+
+      if (data.status === 'ok') {
+        skeleton.classList.add('hidden');
+        content.innerHTML = marked.parse(data.summary || '');
+        content.classList.remove('hidden');
+        tag.textContent = data.from_cache ? '📦 快取' : '✨ 剛生成';
+        tag.className = 'text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20';
+      } else {
+        errEl.textContent = '摘要生成失敗，請重整頁面。';
+        errEl.classList.remove('hidden');
+        skeleton.classList.add('hidden');
+      }
+    })
+    .catch(err => {
+      console.error('Summary fetch error:', err);
+      document.getElementById('llm-error').textContent = '無法連接 AI 分析服務。';
+      document.getElementById('llm-error').classList.remove('hidden');
+      document.getElementById('llm-skeleton').classList.add('hidden');
+    });
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+  applyColorMode(getColorMode());
+  fetchMarket();
+  fetchSummary();
+});
+</script>
+{% endblock %}

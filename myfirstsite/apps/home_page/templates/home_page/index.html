@@ -123,62 +123,97 @@
 
 <!-- About Me Section -->
 <section class="about-fade-in mb-16">
-  <div class="glass rounded-2xl p-8 md:p-10 max-w-4xl mx-auto">
+  <div class="glass rounded-2xl p-8 md:p-10 max-w-4xl mx-auto relative">
+    {% if user.is_authenticated %}
+    <a href="{% url 'home_page:edit_profile' %}" class="btn btn-sm btn-ghost absolute top-4 right-4">
+      <i class="fas fa-pen-to-square"></i> Edit Profile
+    </a>
+    {% endif %}
     <div class="flex flex-col md:flex-row gap-8 items-start">
       <!-- Avatar & Info -->
       <div class="flex-shrink-0 flex flex-col items-center md:items-start gap-3">
-        <div
-          class="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyrene-pink via-cyrene-lavender to-cyrene-blue flex items-center justify-center text-3xl font-display font-bold text-white shadow-lg">
+        {% if profile and profile.avatar %}
+        <img src="{{ profile.avatar.url }}" alt="{{ profile.display_name }}"
+             class="w-20 h-20 rounded-2xl object-cover shadow-lg">
+        {% else %}
+        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyrene-pink via-cyrene-lavender to-cyrene-blue flex items-center justify-center text-3xl font-display font-bold text-white shadow-lg">
           S
         </div>
-        <h2 class="text-xl font-display font-bold text-white" data-i18n="home.about_name">Sakanasa</h2>
-        <p class="text-xs text-gray-500" data-i18n="home.about_role">Full-Stack Developer</p>
+        {% endif %}
+        <h2 class="text-xl font-display font-bold text-white">
+          {% if profile %}{{ profile.display_name }}{% else %}Sakanasa{% endif %}
+        </h2>
+        <p class="text-xs text-gray-500">
+          {% if profile %}{{ profile.role }}{% else %}Full-Stack Developer{% endif %}
+        </p>
       </div>
 
       <!-- Bio & Skills -->
       <div class="flex-1 space-y-4">
-        <p class="text-gray-300 text-sm leading-relaxed" data-i18n="home.about_bio">
-          熱愛用程式解決問題的開發者。擅長 Python 後端開發與資料自動化，喜歡把實用的想法做成方便的小工具。這個工坊收錄了我在學習 Django 過程中打造的各種專案。
+        <p class="text-gray-300 text-sm leading-relaxed">
+          {% if profile and profile.bio %}{{ profile.bio }}
+          {% else %}熱愛用程式解決問題的開發者。擅長 Python 後端開發與資料自動化，喜歡把實用的想法做成方便的小工具。這個工坊收錄了我在學習 Django 過程中打造的各種專案。
+          {% endif %}
         </p>
 
         <!-- Skill bars -->
         <div class="space-y-3 pt-2">
-          <div>
-            <div class="flex justify-between text-xs mb-1">
-              <span class="text-gray-400">Python / Django</span>
-              <span class="text-cyrene-lavender">85%</span>
+          {% if profile and profile.skills.all %}
+            {% for skill in profile.skills.all %}
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-gray-400">{{ skill.name }}</span>
+                <span class="text-{{ skill.label_color }}">{{ skill.percentage }}%</span>
+              </div>
+              <div class="w-full h-1.5 rounded-full bg-white/5">
+                <div class="skill-bar-fill
+                  {% if skill.gradient == 'lavender-blue' %}bg-gradient-to-r from-cyrene-lavender to-cyrene-blue
+                  {% elif skill.gradient == 'pink-lavender' %}bg-gradient-to-r from-cyrene-pink to-cyrene-lavender
+                  {% elif skill.gradient == 'blue-pink' %}bg-gradient-to-r from-cyrene-blue to-cyrene-pink
+                  {% elif skill.gradient == 'lavender-pink' %}bg-gradient-to-r from-cyrene-lavender to-cyrene-pink
+                  {% endif %}"
+                     style="width:{{ skill.percentage }}%"></div>
+              </div>
             </div>
-            <div class="w-full h-1.5 rounded-full bg-white/5">
-              <div class="skill-bar-fill bg-gradient-to-r from-cyrene-lavender to-cyrene-blue" style="width:85%"></div>
+            {% endfor %}
+          {% else %}
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-gray-400">Python / Django</span>
+                <span class="text-cyrene-lavender">85%</span>
+              </div>
+              <div class="w-full h-1.5 rounded-full bg-white/5">
+                <div class="skill-bar-fill bg-gradient-to-r from-cyrene-lavender to-cyrene-blue" style="width:85%"></div>
+              </div>
             </div>
-          </div>
-          <div>
-            <div class="flex justify-between text-xs mb-1">
-              <span class="text-gray-400">Web Scraping / Selenium</span>
-              <span class="text-cyrene-pink">80%</span>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-gray-400">Web Scraping / Selenium</span>
+                <span class="text-cyrene-pink">80%</span>
+              </div>
+              <div class="w-full h-1.5 rounded-full bg-white/5">
+                <div class="skill-bar-fill bg-gradient-to-r from-cyrene-pink to-cyrene-lavender" style="width:80%"></div>
+              </div>
             </div>
-            <div class="w-full h-1.5 rounded-full bg-white/5">
-              <div class="skill-bar-fill bg-gradient-to-r from-cyrene-pink to-cyrene-lavender" style="width:80%"></div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-gray-400">HTML / CSS / JavaScript</span>
+                <span class="text-cyrene-blue">75%</span>
+              </div>
+              <div class="w-full h-1.5 rounded-full bg-white/5">
+                <div class="skill-bar-fill bg-gradient-to-r from-cyrene-blue to-cyrene-pink" style="width:75%"></div>
+              </div>
             </div>
-          </div>
-          <div>
-            <div class="flex justify-between text-xs mb-1">
-              <span class="text-gray-400">HTML / CSS / JavaScript</span>
-              <span class="text-cyrene-blue">75%</span>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-gray-400">Data Visualization</span>
+                <span class="text-cyrene-lavender">70%</span>
+              </div>
+              <div class="w-full h-1.5 rounded-full bg-white/5">
+                <div class="skill-bar-fill bg-gradient-to-r from-cyrene-lavender to-cyrene-pink" style="width:70%"></div>
+              </div>
             </div>
-            <div class="w-full h-1.5 rounded-full bg-white/5">
-              <div class="skill-bar-fill bg-gradient-to-r from-cyrene-blue to-cyrene-pink" style="width:75%"></div>
-            </div>
-          </div>
-          <div>
-            <div class="flex justify-between text-xs mb-1">
-              <span class="text-gray-400">Data Visualization</span>
-              <span class="text-cyrene-lavender">70%</span>
-            </div>
-            <div class="w-full h-1.5 rounded-full bg-white/5">
-              <div class="skill-bar-fill bg-gradient-to-r from-cyrene-lavender to-cyrene-pink" style="width:70%"></div>
-            </div>
-          </div>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -347,6 +382,32 @@
       <span class="tech-tag">Web Audio</span>
       <span class="tech-tag">LocalStorage</span>
       <span class="tech-tag">Timer API</span>
+    </div>
+    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
+      <span data-i18n="home.explore">探索</span>
+      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+    </div>
+  </a>
+
+  <!-- Card: Finance Brief -->
+  <a href="{% url 'finance_brief:dashboard' %}"
+    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
+    <div class="flex items-center gap-4 mb-4">
+      <div class="w-12 h-12 rounded-xl bg-cyrene-pink/15 flex items-center justify-center">
+        <i class="fas fa-newspaper text-xl text-cyrene-pink"></i>
+      </div>
+      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-pink transition-colors"
+          data-i18n="home.finance_brief_title">
+        今日金融快報
+      </h3>
+    </div>
+    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.finance_brief_desc">
+      每日自動聚合股票指數、外匯、大宗商品與財經新聞，由 AI 生成繁體中文市場總覽。
+    </p>
+    <div class="flex flex-wrap gap-1.5 mt-4">
+      <span class="tech-tag">yfinance</span>
+      <span class="tech-tag">Ollama LLM</span>
+      <span class="tech-tag">RSS</span>
     </div>
     <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
       <span data-i18n="home.explore">探索</span>

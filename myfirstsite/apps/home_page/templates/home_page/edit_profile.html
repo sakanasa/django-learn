@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - Workshop{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <!-- Page Header -->
+  <div class="flex items-center gap-4 mb-8">
+    <a href="{% url 'home_page:index' %}" class="btn btn-sm btn-secondary">
+      <i class="fas fa-arrow-left"></i> Back
+    </a>
+    <h1 class="text-2xl font-display font-bold text-white">Edit Profile</h1>
+    <div class="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent"></div>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" class="space-y-6">
+    {% csrf_token %}
+    {{ formset.management_form }}
+
+    <!-- Profile Card -->
+    <div class="glass rounded-2xl p-8">
+      <h2 class="text-lg font-display font-semibold text-white mb-6 flex items-center gap-2">
+        <i class="fas fa-user text-cyrene-lavender text-sm"></i>
+        Profile Info
+      </h2>
+
+      <!-- Avatar Preview -->
+      <div class="flex items-start gap-6 mb-6">
+        <div class="flex-shrink-0">
+          {% if profile and profile.avatar %}
+          <img id="avatar-preview" src="{{ profile.avatar.url }}" alt="Avatar"
+               class="w-20 h-20 rounded-2xl object-cover shadow-lg">
+          {% else %}
+          <div id="avatar-placeholder"
+               class="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyrene-pink via-cyrene-lavender to-cyrene-blue flex items-center justify-center text-3xl font-display font-bold text-white shadow-lg">
+            S
+          </div>
+          <img id="avatar-preview" src="" alt="Avatar"
+               class="w-20 h-20 rounded-2xl object-cover shadow-lg hidden">
+          {% endif %}
+        </div>
+        <div class="flex-1">
+          <label class="block text-xs font-medium text-gray-400 mb-2">Avatar Image</label>
+          {{ form.avatar }}
+          {% if form.avatar.errors %}
+          <p class="text-cyrene-pink text-xs mt-1">{{ form.avatar.errors.0 }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Display Name -->
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-2">Display Name</label>
+          {{ form.display_name }}
+          {% if form.display_name.errors %}
+          <p class="text-cyrene-pink text-xs mt-1">{{ form.display_name.errors.0 }}</p>
+          {% endif %}
+        </div>
+        <!-- Role -->
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-2">Role / Title</label>
+          {{ form.role }}
+          {% if form.role.errors %}
+          <p class="text-cyrene-pink text-xs mt-1">{{ form.role.errors.0 }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Bio -->
+      <div class="mt-4">
+        <label class="block text-xs font-medium text-gray-400 mb-2">Bio</label>
+        {{ form.bio }}
+        {% if form.bio.errors %}
+        <p class="text-cyrene-pink text-xs mt-1">{{ form.bio.errors.0 }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Skills Card -->
+    <div class="glass rounded-2xl p-8">
+      <h2 class="text-lg font-display font-semibold text-white mb-6 flex items-center gap-2">
+        <i class="fas fa-chart-bar text-cyrene-blue text-sm"></i>
+        Skills
+      </h2>
+
+      <!-- Skills Header -->
+      <div class="hidden md:grid grid-cols-[1fr_5rem_10rem_10rem_4rem_3rem] gap-3 mb-3 px-1">
+        <span class="text-xs font-medium text-gray-500">Skill Name</span>
+        <span class="text-xs font-medium text-gray-500 text-center">%</span>
+        <span class="text-xs font-medium text-gray-500">Gradient</span>
+        <span class="text-xs font-medium text-gray-500">Label Color</span>
+        <span class="text-xs font-medium text-gray-500 text-center">Order</span>
+        <span class="text-xs font-medium text-gray-500 text-center">Del</span>
+      </div>
+
+      <!-- Skill Rows -->
+      <div class="space-y-3" id="skill-formset">
+        {% for skill_form in formset %}
+        <div class="skill-row grid grid-cols-1 md:grid-cols-[1fr_5rem_10rem_10rem_4rem_3rem] gap-3 items-center p-3 rounded-xl bg-white/3 border border-white/5">
+          {{ skill_form.id }}
+          <div>
+            <label class="md:hidden text-xs text-gray-500 mb-1 block">Skill Name</label>
+            {{ skill_form.name }}
+            {% if skill_form.name.errors %}
+            <p class="text-cyrene-pink text-xs mt-1">{{ skill_form.name.errors.0 }}</p>
+            {% endif %}
+          </div>
+          <div>
+            <label class="md:hidden text-xs text-gray-500 mb-1 block">%</label>
+            {{ skill_form.percentage }}
+          </div>
+          <div>
+            <label class="md:hidden text-xs text-gray-500 mb-1 block">Gradient</label>
+            {{ skill_form.gradient }}
+          </div>
+          <div>
+            <label class="md:hidden text-xs text-gray-500 mb-1 block">Label Color</label>
+            {{ skill_form.label_color }}
+          </div>
+          <div>
+            <label class="md:hidden text-xs text-gray-500 mb-1 block">Order</label>
+            {{ skill_form.order }}
+          </div>
+          <!-- Delete checkbox -->
+          <div class="flex items-center justify-center">
+            {% if skill_form.DELETE %}
+            <label class="flex items-center gap-1.5 cursor-pointer group">
+              {{ skill_form.DELETE }}
+              <span class="text-xs text-gray-500 group-hover:text-cyrene-pink transition-colors">
+                <i class="fas fa-trash-alt"></i>
+              </span>
+            </label>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <p class="text-xs text-gray-500 mt-4">
+        <i class="fas fa-info-circle mr-1"></i>
+        Check the trash icon to delete a skill row. New rows are added automatically.
+      </p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex items-center justify-end gap-4 pb-8">
+      <a href="{% url 'home_page:index' %}" class="btn btn-md btn-secondary">
+        Cancel
+      </a>
+      <button type="submit" class="btn btn-md btn-primary">
+        <i class="fas fa-check"></i> Save Changes
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  // Live avatar preview
+  const avatarInput = document.querySelector('input[name="avatar"]');
+  if (avatarInput) {
+    avatarInput.addEventListener('change', function () {
+      const file = this.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const preview = document.getElementById('avatar-preview');
+        const placeholder = document.getElementById('avatar-placeholder');
+        if (preview) {
+          preview.src = e.target.result;
+          preview.classList.remove('hidden');
+        }
+        if (placeholder) placeholder.classList.add('hidden');
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+</script>
+{% endblock %}

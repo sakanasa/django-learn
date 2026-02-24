@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'apps.deck_analysis.apps.DeckAnalysisConfig',
     'apps.deck_showcase.apps.DeckShowcaseConfig',
     'apps.stock_market.apps.StockMarketConfig',
+    'apps.finance_brief.apps.FinanceBriefConfig',
 ]
 
 # Ollama LLM settings (Mac Studio via Tailscale)
