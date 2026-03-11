@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+
+{% block title %}WsToDiscord — Sakanasa's Workshop{% endblock %}
+
+{% block extra_head %}
+<style>
+  .tech-tag {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #9ca3af;
+  }
+  .flow-arrow {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    align-self: center;
+  }
+  .flow-box {
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.75rem;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .highlight-block {
+    background: rgba(26, 26, 46, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1rem;
+    padding: 1.5rem;
+  }
+  .highlight-block code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.78rem;
+    color: #A8D8EA;
+    background: rgba(168, 216, 234, 0.08);
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.3rem;
+  }
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    margin: 3rem 0;
+  }
+  .discord-purple { color: #5865F2; }
+  .bg-discord-purple { background-color: rgba(88, 101, 242, 0.15); }
+  .border-discord { border-color: rgba(88, 101, 242, 0.3); }
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border: 1px solid;
+  }
+  .badge-green {
+    color: #4ade80;
+    border-color: rgba(74, 222, 128, 0.3);
+    background: rgba(74, 222, 128, 0.08);
+  }
+  .badge-blue {
+    color: #A8D8EA;
+    border-color: rgba(168, 216, 234, 0.3);
+    background: rgba(168, 216, 234, 0.08);
+  }
+  .badge-purple {
+    color: #5865F2;
+    border-color: rgba(88, 101, 242, 0.3);
+    background: rgba(88, 101, 242, 0.08);
+  }
+  .badge-orange {
+    color: #fb923c;
+    border-color: rgba(251, 146, 60, 0.3);
+    background: rgba(251, 146, 60, 0.08);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Back Button -->
+<div class="mb-6">
+  <a href="{% url 'home_page:index' %}" class="btn btn-sm btn-secondary">
+    <i class="fas fa-arrow-left"></i> 返回首頁
+  </a>
+</div>
+
+<!-- Hero Section -->
+<div class="glass rounded-2xl p-8 md:p-12 mb-8 relative overflow-hidden">
+  <!-- Decorative blob -->
+  <div class="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-10"
+    style="background: #5865F2; filter: blur(60px); pointer-events:none;"></div>
+
+  <div class="flex flex-col md:flex-row items-start md:items-center gap-6 relative z-10">
+    <div class="w-20 h-20 rounded-2xl bg-discord-purple border border-discord flex items-center justify-center flex-shrink-0">
+      <i class="fab fa-discord text-4xl discord-purple"></i>
+    </div>
+    <div class="flex-1">
+      <h1 class="text-3xl md:text-4xl font-display font-bold gradient-text mb-2">WsToDiscord</h1>
+      <p class="text-gray-300 text-base md:text-lg leading-relaxed mb-4">
+        自動監控日本 Weiß Schwarz 卡牌店庫存的 Discord Bot。每 30 分鐘爬取多家日本卡牌店，偵測新品上架、價格異動與售完事件，透過 Rich Embeds 即時推播至 Discord。
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <span class="status-badge badge-green"><i class="fas fa-circle text-[8px]"></i> Running</span>
+        <span class="status-badge badge-blue"><i class="fab fa-python text-[10px]"></i> discord.py</span>
+        <span class="status-badge badge-orange"><i class="fas fa-cloud text-[10px]"></i> GCP</span>
+        <span class="status-badge badge-purple"><i class="fab fa-docker text-[10px]"></i> Docker</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- Core Features -->
+<section class="mb-12">
+  <div class="flex items-center gap-4 mb-8">
+    <h2 class="text-2xl font-display font-bold text-white">核心功能</h2>
+    <div class="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent"></div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+    <!-- Feature 1: Multi-shop Scraper -->
+    <div class="glass card-glow p-6 rounded-2xl">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-xl bg-cyrene-pink/15 flex items-center justify-center">
+          <i class="fas fa-spider text-cyrene-pink"></i>
+        </div>
+        <h3 class="font-display font-semibold text-white">多店舖爬蟲</h3>
+      </div>
+      <p class="text-gray-400 text-sm leading-relaxed mb-3">
+        同時監控多家日本卡牌店，解析商品名稱、價格、庫存狀態，結構化為 dataclass 物件。
+      </p>
+      <div class="flex flex-wrap gap-1.5">
+        <span class="tech-tag">BeautifulSoup4</span>
+        <span class="tech-tag">Requests</span>
+        <span class="tech-tag">dataclasses</span>
+      </div>
+    </div>
+
+    <!-- Feature 2: Change Detection -->
+    <div class="glass card-glow p-6 rounded-2xl">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-xl bg-cyrene-blue/15 flex items-center justify-center">
+          <i class="fas fa-code-compare text-cyrene-blue"></i>
+        </div>
+        <h3 class="font-display font-semibold text-white">變動偵測</h3>
+      </div>
+      <p class="text-gray-400 text-sm leading-relaxed mb-3">
+        將上次爬取結果序列化為 JSON 存入 GCS，新一輪爬取後進行差異比對，生成 ChangeEvent 列表。
+      </p>
+      <div class="flex flex-wrap gap-1.5">
+        <span class="tech-tag">JSON State</span>
+        <span class="tech-tag">GCS</span>
+        <span class="tech-tag">Diffing Logic</span>
+      </div>
+    </div>
+
+    <!-- Feature 3: Discord Push -->
+    <div class="glass card-glow p-6 rounded-2xl">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-xl bg-discord-purple border border-discord flex items-center justify-center">
+          <i class="fab fa-discord discord-purple"></i>
+        </div>
+        <h3 class="font-display font-semibold text-white">Discord 推播</h3>
+      </div>
+      <p class="text-gray-400 text-sm leading-relaxed mb-3">
+        依事件類型（新品/漲價/售完）選用不同顏色的 Embed，附上商品圖片連結即時推送至指定頻道。
+      </p>
+      <div class="flex flex-wrap gap-1.5">
+        <span class="tech-tag">discord.py</span>
+        <span class="tech-tag">Embeds</span>
+        <span class="tech-tag">image attachments</span>
+      </div>
+    </div>
+
+    <!-- Feature 4: Slash Commands -->
+    <div class="glass card-glow p-6 rounded-2xl">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-xl bg-cyrene-lavender/15 flex items-center justify-center">
+          <i class="fas fa-terminal text-cyrene-lavender"></i>
+        </div>
+        <h3 class="font-display font-semibold text-white">Slash Commands</h3>
+      </div>
+      <p class="text-gray-400 text-sm leading-relaxed mb-3">
+        支援互動式指令查詢庫存，無需等待定時推播即可隨時取得最新資料。
+      </p>
+      <div class="flex flex-wrap gap-1.5">
+        <span class="tech-tag">/stock</span>
+        <span class="tech-tag">/stockimg</span>
+        <span class="tech-tag">/update</span>
+        <span class="tech-tag">/emoji-stats</span>
+      </div>
+    </div>
+
+    <!-- Feature 5: Dual-mode Deploy -->
+    <div class="glass card-glow p-6 rounded-2xl">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-xl bg-cyrene-blue/15 flex items-center justify-center">
+          <i class="fab fa-docker text-cyrene-blue"></i>
+        </div>
+        <h3 class="font-display font-semibold text-white">雙模式部署</h3>
+      </div>
+      <p class="text-gray-400 text-sm leading-relaxed mb-3">
+        持久 Bot 模式（APScheduler 內建排程）與 Cloud Run 一次性執行模式，依需求靈活切換。
+      </p>
+      <div class="flex flex-wrap gap-1.5">
+        <span class="tech-tag">Cloud Run</span>
+        <span class="tech-tag">APScheduler</span>
+        <span class="tech-tag">Docker</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Architecture Flow -->
+<section class="mb-12">
+  <div class="flex items-center gap-4 mb-8">
+    <h2 class="text-2xl font-display font-bold text-white">架構流程</h2>
+    <div class="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent"></div>
+  </div>
+
+  <div class="glass rounded-2xl p-6 md:p-8">
+    <!-- Flow diagram -->
+    <div class="flex flex-wrap items-center justify-center gap-2 md:gap-3 mb-8">
+      <div class="flow-box bg-cyrene-lavender/15 border border-cyrene-lavender/30 text-cyrene-lavender">
+        <i class="fas fa-clock mr-1.5"></i>排程器
+      </div>
+      <i class="fas fa-chevron-right flow-arrow"></i>
+      <div class="flow-box bg-cyrene-pink/15 border border-cyrene-pink/30 text-cyrene-pink">
+        <i class="fas fa-spider mr-1.5"></i>爬蟲
+      </div>
+      <i class="fas fa-chevron-right flow-arrow"></i>
+      <div class="flow-box bg-cyrene-blue/15 border border-cyrene-blue/30 text-cyrene-blue">
+        <i class="fas fa-database mr-1.5"></i>狀態管理
+      </div>
+      <i class="fas fa-chevron-right flow-arrow"></i>
+      <div class="flow-box bg-discord-purple border border-discord text-[#5865F2]">
+        <i class="fab fa-discord mr-1.5"></i>Discord 通知器
+      </div>
+    </div>
+
+    <!-- Embed Color Legend -->
+    <div class="border-t border-white/5 pt-6">
+      <p class="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wider">Embed 顏色說明</p>
+      <div class="flex flex-wrap gap-4">
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-green-400"></div>
+          <span class="text-sm text-gray-300">新品上架</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-amber-400"></div>
+          <span class="text-sm text-gray-300">價格變動</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-red-400"></div>
+          <span class="text-sm text-gray-300">售完/下架</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Tech Stack -->
+<section class="mb-12">
+  <div class="flex items-center gap-4 mb-8">
+    <h2 class="text-2xl font-display font-bold text-white">技術堆疊</h2>
+    <div class="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent"></div>
+  </div>
+
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+    <div class="glass rounded-xl p-4 flex flex-col items-center gap-2 text-center">
+      <i class="fab fa-python text-3xl text-[#3776AB]"></i>
+      <span class="text-xs text-gray-400 font-medium">Python</span>
+    </div>
+    <div class="glass rounded-xl p-4 flex flex-col items-center gap-2 text-center">
+      <i class="fab fa-discord text-3xl discord-purple"></i>
+      <span class="text-xs text-gray-400 font-medium">discord.py</span>
+    </div>
+    <div class="glass rounded-xl p-4 flex flex-col items-center gap-2 text-center">
+      <i class="fas fa-spider text-3xl text-cyrene-pink"></i>
+      <span class="text-xs text-gray-400 font-medium">BeautifulSoup4</span>
+    </div>
+    <div class="glass rounded-xl p-4 flex flex-col items-center gap-2 text-center">
+      <i class="fas fa-exchange-alt text-3xl text-cyrene-blue"></i>
+      <span class="text-xs text-gray-400 font-medium">Requests</span>
+    </div>
+    <div class="glass rounded-xl p-4 flex flex-col items-center gap-2 text-center">
+      <i class="fas fa-clock text-3xl text-cyrene-lavender"></i>
+      <span class="text-xs text-gray-400 font-medium">APScheduler</span>
+    </div>
+    <div class="glass rounded-xl p-4 flex flex-col items-center gap-2 text-center">
+      <i class="fas fa-bucket text-3xl text-[#f59e0b]"></i>
+      <span class="text-xs text-gray-400 font-medium">GCS</span>
+    </div>
+    <div class="glass rounded-xl p-4 flex flex-col items-center gap-2 text-center">
+      <i class="fas fa-key text-3xl text-[#34d399]"></i>
+      <span class="text-xs text-gray-400 font-medium">Secret Manager</span>
+    </div>
+    <div class="glass rounded-xl p-4 flex flex-col items-center gap-2 text-center">
+      <i class="fab fa-docker text-3xl text-[#2496ED]"></i>
+      <span class="text-xs text-gray-400 font-medium">Docker</span>
+    </div>
+    <div class="glass rounded-xl p-4 flex flex-col items-center gap-2 text-center">
+      <i class="fas fa-cloud text-3xl text-[#4285F4]"></i>
+      <span class="text-xs text-gray-400 font-medium">Cloud Run</span>
+    </div>
+    <div class="glass rounded-xl p-4 flex flex-col items-center gap-2 text-center">
+      <i class="fas fa-file-code text-3xl text-[#a3e635]"></i>
+      <span class="text-xs text-gray-400 font-medium">dotenv</span>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Implementation Highlights -->
+<section class="mb-12">
+  <div class="flex items-center gap-4 mb-8">
+    <h2 class="text-2xl font-display font-bold text-white">實作亮點</h2>
+    <div class="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent"></div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+    <!-- Highlight 1: ProductSnapshot diff -->
+    <div class="highlight-block">
+      <div class="flex items-center gap-2 mb-3">
+        <i class="fas fa-code text-cyrene-pink"></i>
+        <h3 class="font-display font-semibold text-white text-sm">ProductSnapshot 差異邏輯</h3>
+      </div>
+      <p class="text-gray-400 text-sm leading-relaxed mb-3">
+        每筆商品以 <code>@dataclass</code> 表示，比對新舊快照時產生帶有事件類型的 <code>ChangeEvent</code>，確保推播訊息包含完整的前後差異資訊。
+      </p>
+      <div class="flex flex-wrap gap-1.5">
+        <span class="tech-tag">@dataclass</span>
+        <span class="tech-tag">ChangeEvent</span>
+        <span class="tech-tag">Diff Algorithm</span>
+      </div>
+    </div>
+
+    <!-- Highlight 2: Storage abstraction -->
+    <div class="highlight-block">
+      <div class="flex items-center gap-2 mb-3">
+        <i class="fas fa-layer-group text-cyrene-blue"></i>
+        <h3 class="font-display font-semibold text-white text-sm">雙儲存後端抽象</h3>
+      </div>
+      <p class="text-gray-400 text-sm leading-relaxed mb-3">
+        透過統一介面支援本地 JSON 檔（開發用）與 Google Cloud Storage（正式環境），切換後端只需更改設定，不影響業務邏輯。
+      </p>
+      <div class="flex flex-wrap gap-1.5">
+        <span class="tech-tag">Local JSON</span>
+        <span class="tech-tag">GCS Bucket</span>
+        <span class="tech-tag">Backend Abstraction</span>
+      </div>
+    </div>
+
+    <!-- Highlight 3: bot.py vs main.py -->
+    <div class="highlight-block">
+      <div class="flex items-center gap-2 mb-3">
+        <i class="fas fa-sitemap text-cyrene-lavender"></i>
+        <h3 class="font-display font-semibold text-white text-sm">持久 Bot vs 一次性執行</h3>
+      </div>
+      <p class="text-gray-400 text-sm leading-relaxed mb-3">
+        <code>bot.py</code> 使用 APScheduler 維持長駐程序，同時支援 Slash Commands；<code>main.py</code> 以無狀態方式執行單次爬取，適合 Cloud Run Job 部署。
+      </p>
+      <div class="flex flex-wrap gap-1.5">
+        <span class="tech-tag">bot.py</span>
+        <span class="tech-tag">main.py</span>
+        <span class="tech-tag">APScheduler</span>
+      </div>
+    </div>
+
+    <!-- Highlight 4: GCP Secret Manager -->
+    <div class="highlight-block">
+      <div class="flex items-center gap-2 mb-3">
+        <i class="fas fa-shield-halved text-[#34d399]"></i>
+        <h3 class="font-display font-semibold text-white text-sm">GCP Secret Manager 金鑰管理</h3>
+      </div>
+      <p class="text-gray-400 text-sm leading-relaxed mb-3">
+        Discord Bot Token 與敏感設定均存放於 GCP Secret Manager，容器啟動時動態載入，確保金鑰不暴露於映像檔或環境變數中。
+      </p>
+      <div class="flex flex-wrap gap-1.5">
+        <span class="tech-tag">Secret Manager</span>
+        <span class="tech-tag">IAM</span>
+        <span class="tech-tag">Zero Hardcoding</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Footer back button -->
+<div class="flex justify-center mt-8 mb-4">
+  <a href="{% url 'home_page:index' %}" class="btn btn-sm btn-secondary">
+    <i class="fas fa-arrow-left"></i> 返回首頁
+  </a>
+</div>
+
+{% endblock %}

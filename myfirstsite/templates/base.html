@@ -332,6 +332,10 @@
                 class="block px-4 py-2 text-sm text-gray-300 hover:text-cyrene-lavender hover:bg-white/5 transition-colors">
                 <i class="fas fa-image mr-2 w-4 text-center"></i><span data-i18n="nav.showcase">展示圖</span>
               </a>
+              <a href="{% url 'ws_damage_sim:index' %}"
+                class="block px-4 py-2 text-sm text-gray-300 hover:text-cyrene-pink hover:bg-white/5 transition-colors">
+                <i class="fas fa-dice mr-2 w-4 text-center"></i><span data-i18n="nav.ws_damage_sim">殺招模擬器</span>
+              </a>
             </div>
           </div>
 
@@ -423,6 +427,10 @@
               class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-lavender hover:bg-white/5 transition-colors text-sm">
               <i class="fas fa-image mr-2"></i> <span data-i18n="nav.showcase">展示圖</span>
             </a>
+            <a href="{% url 'ws_damage_sim:index' %}"
+              class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-pink hover:bg-white/5 transition-colors text-sm">
+              <i class="fas fa-dice mr-2"></i> <span data-i18n="nav.ws_damage_sim">殺招模擬器</span>
+            </a>
           </div>
         </div>
 
@@ -491,7 +499,7 @@
   <script>
     const I18N = {
       zh: {
-        'nav.home': '首頁', 'nav.ws_tools': 'WS工具', 'nav.deck_stats': '牌組統計', 'nav.journal': '日誌', 'nav.color_palette': '調色盤', 'nav.pomodoro': '番茄鐘', 'nav.deck_ai': '牌組AI分析', 'nav.showcase': '展示圖', 'nav.finance_market': '金融市場', 'nav.stock_market': '股市指數', 'nav.finance_brief': '今日金融快報',
+        'nav.home': '首頁', 'nav.ws_tools': 'WS工具', 'nav.deck_stats': '牌組統計', 'nav.journal': '日誌', 'nav.color_palette': '調色盤', 'nav.pomodoro': '番茄鐘', 'nav.deck_ai': '牌組AI分析', 'nav.showcase': '展示圖', 'nav.ws_damage_sim': '殺招模擬器', 'nav.finance_market': '金融市場', 'nav.stock_market': '股市指數', 'nav.finance_brief': '今日金融快報',
         'nav.login': '登入', 'nav.logout': '登出', 'nav.language': '語言',
         'footer.built_with': '用', 'footer.built_suffix': '打造',
         'home.subtitle': '夢幻般的工具與專案集合。\n探索下方的模組開始使用。',
@@ -539,6 +547,9 @@
         'home.projects_title': '專案模組', 'home.tech_stack_title': '技術堆疊',
         'home.stock_title': '股市指數儀表板', 'home.stock_desc': '即時追蹤美股與台股主要指數。查看 S&P 500、NASDAQ、道璩、台灣加權、費半等趨勢圖與漲跌幅。',
         'home.finance_brief_title': '今日金融快報', 'home.finance_brief_desc': '每日自動聚合股票指數、外匯、大宗商品與財經新聞，由 AI 生成繁體中文市場總覽。',
+        'home.damage_sim_title': 'WS 殺招模擬器', 'home.damage_sim_desc': '拖拉積木組合 Weiß Schwarz 殺招，蒙特卡羅模擬計算致命率，支援存檔殺招與 PNG/CSV 匯出。',
+        'home.wstodiscord_title': 'WsToDiscord Bot',
+        'home.wstodiscord_desc': '自動監控日本 WS 卡牌店庫存，每 30 分鐘偵測新品、價格與售完事件，透過 Discord Rich Embeds 即時推播，支援 Slash Commands 查詢。',
         'stock.title': '股市指數儀表板', 'stock.subtitle': '即時追蹤美股與台股主要指數',
         'stock.refresh': '重新整理', 'stock.loading': '載入中...', 'stock.error': '資料載入失敗，請稍後再試。', 'stock.retry': '重試',
         'home.coming_soon': '敬請期待', 'home.coming_soon_desc': '新的模組和工具將會在此出現。',
@@ -584,7 +595,7 @@
         'login.username_placeholder': '帳號', 'login.password_placeholder': '密碼',
       },
       en: {
-        'nav.home': 'Home', 'nav.ws_tools': 'WS Tools', 'nav.deck_stats': 'Deck Stats', 'nav.journal': 'Journal', 'nav.color_palette': 'Color Palette', 'nav.pomodoro': 'Pomodoro', 'nav.deck_ai': 'Deck AI', 'nav.showcase': 'Showcase', 'nav.finance_market': 'Markets', 'nav.stock_market': 'Stock Indices', 'nav.finance_brief': 'Finance Brief',
+        'nav.home': 'Home', 'nav.ws_tools': 'WS Tools', 'nav.deck_stats': 'Deck Stats', 'nav.journal': 'Journal', 'nav.color_palette': 'Color Palette', 'nav.pomodoro': 'Pomodoro', 'nav.deck_ai': 'Deck AI', 'nav.showcase': 'Showcase', 'nav.ws_damage_sim': 'Damage Sim', 'nav.finance_market': 'Markets', 'nav.stock_market': 'Stock Indices', 'nav.finance_brief': 'Finance Brief',
         'nav.login': 'Login', 'nav.logout': 'Logout', 'nav.language': 'Language',
         'footer.built_with': 'Built with', 'footer.built_suffix': '',
         'home.subtitle': 'A dreamy collection of tools and projects.\nExplore the modules below to get started.',
@@ -632,6 +643,9 @@
         'home.projects_title': 'Projects', 'home.tech_stack_title': 'Tech Stack',
         'home.stock_title': 'Stock Market Dashboard', 'home.stock_desc': 'Track major US & Taiwan stock indices in real-time. View S&P 500, NASDAQ, Dow Jones, TAIEX, and PHLX Semiconductor trends & changes.',
         'home.finance_brief_title': 'Finance Brief', 'home.finance_brief_desc': 'Daily aggregation of stock indices, FX, commodities, and financial news. AI generates a Traditional Chinese market overview.',
+        'home.damage_sim_title': 'WS Damage Simulator', 'home.damage_sim_desc': 'Drag-and-drop blocks to build WS finishers. Monte Carlo simulation calculates kill rates. Save combos and export PNG/CSV.',
+        'home.wstodiscord_title': 'WsToDiscord Bot',
+        'home.wstodiscord_desc': 'Auto-monitors Japanese WS card shops every 30 min. Detects new listings, price changes & sell-outs. Sends Discord Rich Embed alerts. Supports Slash Commands.',
         'stock.title': 'Stock Market Dashboard', 'stock.subtitle': 'Track major US & Taiwan stock indices in real-time',
         'stock.refresh': 'Refresh', 'stock.loading': 'Loading...', 'stock.error': 'Failed to load data. Please try again later.', 'stock.retry': 'Retry',
         'home.coming_soon': 'Coming Soon', 'home.coming_soon_desc': 'New modules and tools will appear here as they are built. Stay tuned.',
