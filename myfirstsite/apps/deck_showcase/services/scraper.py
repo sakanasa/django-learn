@@ -261,6 +261,15 @@ def _scrape_bottleneko(deck_code, merge_alts=True):
     series_name = data.get('title', '')
     deck_title = data.get('title', '')
 
+    # Build series code → info map from top-level 'series' field
+    series_info_map = {}  # seriesCode → {name, cover}
+    for s in data.get('series', []):
+        zh_name = s.get('i18n', {}).get('zh', {}).get('name', '')
+        display_name = zh_name or s.get('name', '')
+        cover = s.get('cover', '')
+        for code in s.get('code', []):
+            series_info_map[code] = {'name': display_name, 'cover': cover}
+
     # Convert Bottleneko card format to unified format
     raw_cards = []
     for c in data['cards']:
@@ -289,6 +298,7 @@ def _scrape_bottleneko(deck_code, merge_alts=True):
             'trigger': '',
             'rare': c.get('rare', ''),
             'img': img,
+            'series_code': c.get('seriesCode', ''),
         })
 
     # Merge duplicate cards
@@ -315,10 +325,31 @@ def _scrape_bottleneko(deck_code, merge_alts=True):
 
     total_cards = sum(c['count'] for c in cards)
 
+    # Build products: sum count per series_code, attach name and cover
+    series_count = {}
+    series_order = []
+    for card in cards:
+        sc = card.get('series_code', '')
+        if sc not in series_count:
+            series_count[sc] = 0
+            series_order.append(sc)
+        series_count[sc] += card['count']
+
+    products = []
+    for sc in series_order:
+        info = series_info_map.get(sc, {})
+        products.append({
+            'series_code': sc,
+            'name': info.get('name', sc),
+            'cover': info.get('cover', ''),
+            'count': series_count[sc],
+        })
+
     return {
         'series_name': series_name,
         'deck_code': deck_code,
         'deck_title': deck_title,
         'cards': cards,
         'total_cards': total_cards,
+        'products': products,
     }

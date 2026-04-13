@@ -336,6 +336,10 @@
                 class="block px-4 py-2 text-sm text-gray-300 hover:text-cyrene-pink hover:bg-white/5 transition-colors">
                 <i class="fas fa-dice mr-2 w-4 text-center"></i><span data-i18n="nav.ws_damage_sim">殺招模擬器</span>
               </a>
+              <a href="{% url 'tournament_pie:editor' %}"
+                class="block px-4 py-2 text-sm text-gray-300 hover:text-cyrene-blue hover:bg-white/5 transition-colors">
+                <i class="fas fa-trophy mr-2 w-4 text-center"></i><span data-i18n="nav.tournament_pie">比賽餅圖</span>
+              </a>
             </div>
           </div>
 
@@ -431,6 +435,10 @@
               class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-pink hover:bg-white/5 transition-colors text-sm">
               <i class="fas fa-dice mr-2"></i> <span data-i18n="nav.ws_damage_sim">殺招模擬器</span>
             </a>
+            <a href="{% url 'tournament_pie:editor' %}"
+              class="block px-3 py-2 rounded-lg text-gray-300 hover:text-cyrene-blue hover:bg-white/5 transition-colors text-sm">
+              <i class="fas fa-trophy mr-2"></i> <span data-i18n="nav.tournament_pie">比賽餅圖</span>
+            </a>
           </div>
         </div>
 
@@ -499,10 +507,11 @@
   <script>
     const I18N = {
       zh: {
-        'nav.home': '首頁', 'nav.ws_tools': 'WS工具', 'nav.deck_stats': '牌組統計', 'nav.journal': '日誌', 'nav.color_palette': '調色盤', 'nav.pomodoro': '番茄鐘', 'nav.deck_ai': '牌組AI分析', 'nav.showcase': '展示圖', 'nav.ws_damage_sim': '殺招模擬器', 'nav.finance_market': '金融市場', 'nav.stock_market': '股市指數', 'nav.finance_brief': '今日金融快報',
+        'nav.home': '首頁', 'nav.ws_tools': 'WS工具', 'nav.deck_stats': '牌組統計', 'nav.journal': '日誌', 'nav.color_palette': '調色盤', 'nav.pomodoro': '番茄鐘', 'nav.deck_ai': '牌組AI分析', 'nav.showcase': '展示圖', 'nav.ws_damage_sim': '殺招模擬器', 'nav.tournament_pie': '比賽餅圖', 'nav.finance_market': '金融市場', 'nav.stock_market': '股市指數', 'nav.finance_brief': '今日金融快報',
         'nav.login': '登入', 'nav.logout': '登出', 'nav.language': '語言',
         'footer.built_with': '用', 'footer.built_suffix': '打造',
         'home.subtitle': '夢幻般的工具與專案集合。\n探索下方的模組開始使用。',
+        'home.tournament_pie_title': '比賽殺招連動餅圖', 'home.tournament_pie_desc': '輸入貓罐子牌組網址，自動解析所有殺招連動並生成互動式圓餅圖。支援卡圖拖移縮放、背景換圖、系列統計表，可匯出 PNG。',
         'home.deck_stats_title': '牌組統計',
         'home.deck_stats_desc': '分析卡牌遊戲比賽的牌組分佈。輸入牌組代碼，生成精美的系列佔比圓餅圖。',
         'home.journal_title': '日誌',

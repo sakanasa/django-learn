@@ -245,6 +245,30 @@
 <!-- Module Cards -->
 <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
 
+  <!-- Card: Tournament Pie -->
+  <a href="{% url 'tournament_pie:editor' %}"
+    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
+    <div class="flex items-center gap-4 mb-4">
+      <div class="w-12 h-12 rounded-xl bg-cyrene-blue/15 flex items-center justify-center">
+        <i class="fas fa-trophy text-xl text-cyrene-blue"></i>
+      </div>
+      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-blue transition-colors"
+        data-i18n="home.tournament_pie_title">比賽殺招連動餅圖</h3>
+    </div>
+    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.tournament_pie_desc">
+      輸入貓罐子牌組網址，自動解析所有殺招連動並生成互動式圓餅圖。支援卡圖拖移縮放、背景換圖、系列統計表，可匯出 PNG。
+    </p>
+    <div class="flex flex-wrap gap-1.5 mt-4">
+      <span class="tech-tag">Konva.js</span>
+      <span class="tech-tag">Bottleneko API</span>
+      <span class="tech-tag">Canvas</span>
+    </div>
+    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
+      <span data-i18n="home.explore">探索</span>
+      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+    </div>
+  </a>
+
   <!-- Card: Deck Statistics -->
   <a href="{% url 'pie_chart:dashboard' %}"
     class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">

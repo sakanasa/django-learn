@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'apps.finance_brief.apps.FinanceBriefConfig',
     'apps.ws_damage_sim.apps.WsDamageSimConfig',
     'apps.ws_to_discord.apps.WsToDiscordConfig',
+    'apps.tournament_pie.apps.TournamentPieConfig',
 ]
 
 # Ollama LLM settings (Mac Studio via Tailscale)
