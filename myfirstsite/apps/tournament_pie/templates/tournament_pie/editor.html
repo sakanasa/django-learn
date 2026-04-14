@@ -764,11 +764,22 @@ function exportPng() {
   transformer.nodes([]);
   uiLayer.draw();
 
+  // Hide resize handle + guide line during export
+  if (resizeHandle) resizeHandle.visible(false);
+  if (resizeLine)   resizeLine.visible(false);
+  mainLayer.draw();
+
   document.fonts.ready.then(() => {
     const dataURL = stage.toDataURL({ pixelRatio: 2, mimeType: 'image/png' });
     const a = document.createElement('a');
     a.href = dataURL; a.download = `tournament_pie_${Date.now()}.png`; a.click();
-    transformer.nodes(prevNodes); uiLayer.draw();
+
+    // Restore
+    if (resizeHandle) resizeHandle.visible(true);
+    if (resizeLine)   resizeLine.visible(true);
+    transformer.nodes(prevNodes);
+    mainLayer.draw();
+    uiLayer.draw();
   });
 }
 
