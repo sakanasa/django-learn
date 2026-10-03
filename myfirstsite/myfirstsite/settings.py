@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'apps.ws_damage_sim.apps.WsDamageSimConfig',
     'apps.ws_to_discord.apps.WsToDiscordConfig',
     'apps.tournament_pie.apps.TournamentPieConfig',
+    'apps.ws_opening_sim.apps.WsOpeningSimConfig',
 ]
 
 # Ollama LLM settings (Mac Studio via Tailscale)

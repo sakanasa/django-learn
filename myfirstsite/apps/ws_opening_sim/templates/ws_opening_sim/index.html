@@ -1,0 +1,535 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}開局模擬器 - Workshop{% endblock %}
+
+{% block extra_head %}
+<style>
+  :root { --card-w: 100px; --tbl-scale: 1; --cx-rot: 90deg; --cx-w: 139.75%; }
+  /* CX source images are landscape; rotate them so they sit upright in a portrait slot like characters */
+  .cx-box { position: relative; width: 100%; aspect-ratio: 400 / 559; overflow: hidden; }
+  .cx-box img {
+    position: absolute; top: 50%; left: 50%; width: var(--cx-w); height: auto;
+    transform: translate(-50%, -50%) rotate(var(--cx-rot));
+  }
+  body.oc-wide main { max-width: none; }
+  body.oc-wide #oc_root { max-width: none; }
+  .oc-card {
+    position: relative;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 3px solid transparent;
+    background: rgba(255,255,255,0.04);
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  }
+  .oc-card img { width: 100%; height: auto; display: block; }
+  .oc-card .oc-name {
+    padding: 0.5rem 0.25rem; font-size: clamp(0.55rem, calc(var(--card-w) * 0.0065), 1rem); color: #d1d5db; text-align: center; line-height: 1.2;
+  }
+  .oc-card.selectable { cursor: pointer; }
+  .oc-card.selectable:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(242,167,195,0.25); }
+  .oc-card.selected { border-color: #F2A7C3; box-shadow: 0 0 14px rgba(242,167,195,0.5); transform: translateY(-6px); }
+  .oc-card.selected::after {
+    content: attr(data-mark); position: absolute; top: 4px; right: 4px;
+    background: #F2A7C3; color: #1A1A2E; font-size: 0.65rem; font-weight: 700;
+    padding: 1px 6px; border-radius: 9999px;
+  }
+  .oc-card.fresh { border-color: #A8D8EA; }
+  .oc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--card-w), var(--card-w))); gap: 0.6rem; }
+  .oc-mini-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--card-w) * 0.55), calc(var(--card-w) * 0.55))); gap: 0.4rem; }
+  .oc-mini { border-radius: 0.3rem; overflow: hidden; background: rgba(255,255,255,0.04); font-size: 0.55rem; color: #9ca3af; text-align: center; }
+  .oc-mini img { width: 100%; display: block; }
+  .prob-table { font-size: calc(0.75rem * var(--tbl-scale)); }
+  .prob-table td, .prob-table th { padding: 0.35rem 0.5rem; white-space: nowrap; }
+  .prob-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden; min-width: 60px; }
+  .prob-bar > span { display: block; height: 100%; background: linear-gradient(90deg, #A8D8EA, #F2A7C3); }
+  .prob-row.empty { opacity: 0.35; }
+  .step-chip { padding: 2px 10px; border-radius: 9999px; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.15); color: #9ca3af; }
+  .step-chip.active { border-color: #F2A7C3; color: #F2A7C3; background: rgba(242,167,195,0.1); }
+  .step-chip.done { border-color: #A8D8EA; color: #A8D8EA; }
+  .zoom-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; }
+  .zoom-bar label { font-size: 0.75rem; color: #9ca3af; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; }
+  .zoom-bar input[type=range] { width: 9rem; accent-color: #F2A7C3; }
+  .zoom-bar .zbtn { padding: 2px 10px; border-radius: 0.5rem; font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.15); color: #d1d5db; background: rgba(255,255,255,0.05); }
+  .zoom-bar .zbtn:hover, .zoom-bar .zbtn.on { border-color: #F2A7C3; color: #F2A7C3; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="oc_root" class="max-w-6xl mx-auto">
+  <h1 class="text-3xl font-display font-bold gradient-text mb-2">
+    <i class="fas fa-hand-holding mr-3"></i><span data-i18n="opening_sim.title">開局模擬器</span>
+  </h1>
+  <p class="text-gray-400 text-sm mb-8" data-i18n="opening_sim.subtitle">
+    輸入牌組代碼，模擬開局抽 5 張、調度（Mulligan）與第一回合 Clock 抽 2，並即時顯示每張卡被抽到的機率。
+  </p>
+
+  <!-- Input -->
+  <div class="glass p-6 rounded-2xl mb-6">
+    {% csrf_token %}
+    <h2 class="text-lg font-semibold text-cyrene-blue mb-4">
+      <i class="fas fa-search mr-2"></i><span data-i18n="deck_showcase.input_title">輸入牌組代碼</span>
+    </h2>
+    <div class="flex items-center gap-3 mb-3 flex-wrap">
+      <span class="text-sm text-gray-400 whitespace-nowrap" data-i18n="deck_showcase.source">牌組來源</span>
+      <div class="flex items-center gap-2 flex-wrap">
+        <label><input type="radio" name="deck_source" value="decklog_en" class="hidden peer" />
+          <span class="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10 bg-white/5 text-gray-400 cursor-pointer transition-all peer-checked:border-cyrene-blue peer-checked:text-cyrene-blue peer-checked:bg-cyrene-blue/10">Decklog EN</span></label>
+        <label><input type="radio" name="deck_source" value="decklog_jp" class="hidden peer" />
+          <span class="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10 bg-white/5 text-gray-400 cursor-pointer transition-all peer-checked:border-cyrene-blue peer-checked:text-cyrene-blue peer-checked:bg-cyrene-blue/10">Decklog JP</span></label>
+        <label><input type="radio" name="deck_source" value="bottleneko" checked class="hidden peer" />
+          <span class="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10 bg-white/5 text-gray-400 cursor-pointer transition-all peer-checked:border-cyrene-pink peer-checked:text-cyrene-pink peer-checked:bg-cyrene-pink/10">Bottleneko</span></label>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <input type="text" id="deck_code_input"
+        class="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 text-lg tracking-wider focus:outline-none focus:border-cyrene-blue focus:ring-1 focus:ring-cyrene-blue/50 transition-colors"
+        data-i18n-placeholder="deck_showcase.input_placeholder" placeholder="例如：X8SA" />
+      <button type="button" id="load_btn"
+        class="px-6 py-3 rounded-lg font-semibold text-white bg-gradient-to-r from-cyrene-pink via-cyrene-lavender to-cyrene-blue hover:opacity-90 transition-opacity whitespace-nowrap">
+        <i class="fas fa-download mr-2"></i><span data-i18n="deck_showcase.load_btn">載入牌組</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="error_box" class="hidden glass rounded-xl p-4 mb-6 border border-cyrene-pink/30 text-cyrene-pink text-sm">
+    <i class="fas fa-exclamation-circle mr-2"></i><span id="error_text"></span>
+  </div>
+
+  <div id="loading_box" class="hidden glass p-8 rounded-2xl text-center mb-6">
+    <i class="fas fa-spinner fa-spin text-3xl text-cyrene-lavender mb-2"></i>
+    <p class="text-gray-400 text-sm" data-i18n="deck_showcase.loading">正在載入牌組...</p>
+  </div>
+
+  <!-- Simulator -->
+  <div id="sim_box" class="hidden">
+    <div class="glass p-5 rounded-2xl mb-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div class="text-white font-semibold" id="deck_label"></div>
+          <div class="text-xs text-gray-400" id="deck_meta"></div>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap" id="steps">
+          <span class="step-chip" data-step="mulligan">① 調度</span>
+          <span class="step-chip" data-step="clock">② 抽 1 → Clock 抽 2</span>
+          <span class="step-chip" data-step="done">完成</span>
+        </div>
+        <button type="button" id="restart_btn"
+          class="px-4 py-2 rounded-lg text-sm font-semibold border border-white/10 bg-white/5 text-gray-200 hover:border-cyrene-pink hover:text-cyrene-pink transition-colors">
+          <i class="fas fa-shuffle mr-2"></i>重新洗牌開局
+        </button>
+      </div>
+    </div>
+
+    <div class="glass px-5 py-3 rounded-2xl mb-6 zoom-bar">
+      <span class="text-xs font-semibold text-cyrene-blue"><i class="fas fa-magnifying-glass-plus mr-1"></i>縮放</span>
+      <label>卡片大小
+        <input type="range" id="zoom_card" min="50" max="280" step="5" value="100">
+        <span id="zoom_card_val" class="w-10 text-gray-300">100px</span>
+      </label>
+      <label>機率表
+        <input type="range" id="zoom_tbl" min="70" max="170" step="5" value="100">
+        <span id="zoom_tbl_val" class="w-10 text-gray-300">100%</span>
+      </label>
+      <button type="button" id="wide_btn" class="zbtn"><i class="fas fa-expand mr-1"></i>滿版</button>
+      <button type="button" id="cx_rot_btn" class="zbtn" title="切換 CX／橫向卡的顯示方向">CX 轉向</button>
+      <button type="button" id="zoom_reset" class="zbtn"><i class="fas fa-rotate-left mr-1"></i>重設</button>
+      <span class="text-[0.65rem] text-gray-500">提示：在手牌區按住 Ctrl 並滾動滑鼠滾輪也能縮放卡片</span>
+    </div>
+
+    <div class="grid lg:grid-cols-5 xl:grid-cols-7 gap-6">
+      <!-- Left: zones -->
+      <div class="lg:col-span-3 xl:col-span-4 space-y-6">
+        <div class="glass p-5 rounded-2xl">
+          <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h2 class="text-lg font-semibold text-cyrene-pink">
+              <i class="fas fa-hand mr-2"></i>手牌 <span id="hand_count" class="text-sm text-gray-400"></span>
+            </h2>
+            <div id="action_bar" class="flex items-center gap-2 flex-wrap"></div>
+          </div>
+          <p id="phase_hint" class="text-xs text-gray-400 mb-3"></p>
+          <div id="hand" class="oc-grid"></div>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-6">
+          <div class="glass p-5 rounded-2xl">
+            <h3 class="text-sm font-semibold text-cyrene-blue mb-3">
+              <i class="fas fa-trash-can mr-2"></i>休息室 <span id="waiting_count" class="text-gray-400"></span>
+            </h3>
+            <div id="waiting" class="oc-mini-grid"></div>
+          </div>
+          <div class="glass p-5 rounded-2xl">
+            <h3 class="text-sm font-semibold text-cyrene-lavender mb-3">
+              <i class="fas fa-heart-crack mr-2"></i>Clock 區 <span id="clock_count" class="text-gray-400"></span>
+            </h3>
+            <div id="clock" class="oc-mini-grid"></div>
+          </div>
+        </div>
+
+        <div class="glass p-5 rounded-2xl">
+          <h3 class="text-sm font-semibold text-gray-300 mb-2"><i class="fas fa-scroll mr-2"></i>操作紀錄</h3>
+          <ol id="log" class="text-xs text-gray-400 space-y-1 list-decimal list-inside"></ol>
+        </div>
+      </div>
+
+      <!-- Right: probabilities -->
+      <div class="lg:col-span-2 xl:col-span-3">
+        <div class="glass p-5 rounded-2xl lg:sticky lg:top-4">
+          <h2 class="text-lg font-semibold text-cyrene-blue mb-1">
+            <i class="fas fa-percent mr-2"></i>牌庫抽出機率
+          </h2>
+          <p class="text-xs text-gray-400 mb-3">
+            牌庫剩 <b id="deck_left" class="text-white"></b> 張。
+            <span id="draw_k_hint"></span>
+          </p>
+          <div class="overflow-x-auto max-h-[70vh] overflow-y-auto">
+            <table class="prob-table w-full text-xs text-gray-300">
+              <thead class="text-gray-400 sticky top-0 bg-[#1a1a2e]">
+                <tr class="text-left">
+                  <th>卡牌</th><th>剩餘</th><th>下 1 張</th><th id="th_k">下 2 張</th>
+                </tr>
+              </thead>
+              <tbody id="prob_body"></tbody>
+            </table>
+          </div>
+          <p class="text-[0.65rem] text-gray-500 mt-3">
+            機率 = 該卡在剩餘牌庫中被抽到至少 1 張的機率（超幾何分佈）。已抽出、調度丟棄與 Clock 的牌不會回到牌庫。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const HAND_SIZE = 5;
+
+  let cardDefs = [];   // distinct cards {key, card_name, img_url, level, card_type, count}
+  let deck = [], hand = [], waiting = [], clock = [];
+  let phase = 'idle';  // mulligan | clock | done
+  let selected = new Set();   // indices into hand
+  let freshIds = new Set();   // uids of newly drawn cards
+  let uidSeq = 0;
+  let logLines = [];
+
+  /* ---------- utils ---------- */
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function getCSRF() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value
+      || document.cookie.split('; ').find(r => r.startsWith('csrftoken='))?.split('=')[1];
+  }
+  function randInt(n) {
+    const buf = new Uint32Array(1);
+    const limit = Math.floor(0x100000000 / n) * n;
+    do { crypto.getRandomValues(buf); } while (buf[0] >= limit);
+    return buf[0] % n;
+  }
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = randInt(i + 1);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+  /* P(at least one of r copies in k draws from N cards) */
+  function pAtLeastOne(N, r, k) {
+    if (r <= 0 || N <= 0 || k <= 0) return 0;
+    if (k >= N || N - r < k) return 1;
+    let miss = 1;
+    for (let i = 0; i < k; i++) miss *= (N - r - i) / (N - i);
+    return 1 - miss;
+  }
+  const pct = p => (p * 100).toFixed(p > 0 && p < 0.001 ? 2 : 1) + '%';
+
+  /* ---------- game logic ---------- */
+  function draw(n) {
+    const drawn = [];
+    for (let i = 0; i < n && deck.length; i++) drawn.push(deck.pop());
+    drawn.forEach(c => freshIds.add(c.uid));
+    hand.push(...drawn);
+    return drawn;
+  }
+  function log(msg) { logLines.push(msg); }
+  const names = cs => cs.map(c => c.card_name || c.card_number).join('、') || '（無）';
+
+  function startGame() {
+    deck = [];
+    cardDefs.forEach(def => {
+      for (let i = 0; i < def.count; i++) deck.push({ ...def, uid: ++uidSeq });
+    });
+    shuffle(deck);
+    hand = []; waiting = []; clock = [];
+    selected = new Set(); freshIds = new Set(); logLines = [];
+    phase = 'mulligan';
+    const drawn = draw(HAND_SIZE);
+    log(`洗牌並抽起手 ${HAND_SIZE} 張：${names(drawn)}`);
+    render();
+  }
+
+  function confirmMulligan() {
+    const idx = [...selected].sort((a, b) => b - a);
+    freshIds = new Set();
+    if (idx.length) {
+      const out = idx.map(i => hand.splice(i, 1)[0]).reverse();
+      waiting.push(...out);
+      const drawn = draw(out.length);
+      log(`調度：丟棄 ${out.length} 張（${names(out)}），補抽：${names(drawn)}`);
+    } else {
+      log('調度：不換牌');
+    }
+    // Draw phase: draw 1 card before the clock phase
+    freshIds = new Set();
+    const d = draw(1);
+    log(`抽牌階段：抽 1 張：${names(d)}`);
+    selected = new Set();
+    phase = 'clock';
+    render();
+  }
+  function skipMulligan() { selected = new Set(); confirmMulligan(); }
+
+  function confirmClock() {
+    if (selected.size !== 1) return;
+    const i = [...selected][0];
+    const [c] = hand.splice(i, 1);
+    clock.push(c);
+    freshIds = new Set();
+    const drawn = draw(2);
+    log(`Clock 抽 2：將「${c.card_name || c.card_number}」放入 Clock 區，抽：${names(drawn)}`);
+    selected = new Set();
+    phase = 'done';
+    render();
+  }
+  function skipClock() {
+    freshIds = new Set();
+    log('不使用 Clock 抽 2');
+    selected = new Set();
+    phase = 'done';
+    render();
+  }
+
+  /* ---------- rendering ---------- */
+  const isCx = c => c.level === 'CX';
+  function imgTag(c, alt) {
+    if (!c.img_url) return '';
+    const img = `<img src="${esc(c.img_url)}" alt="${esc(alt || '')}" loading="lazy" referrerpolicy="no-referrer">`;
+    return isCx(c) ? `<div class="cx-box">${img}</div>` : img;
+  }
+  function cardHtml(c) {
+    return `${imgTag(c, c.card_name)}<div class="oc-name">${esc(c.card_name || c.card_number)}</div>`;
+  }
+  function miniHtml(c) {
+    return c.img_url
+      ? `<div class="oc-mini" title="${esc(c.card_name)}">${imgTag(c, '')}</div>`
+      : `<div class="oc-mini p-1">${esc(c.card_name || c.card_number)}</div>`;
+  }
+
+  function renderHand() {
+    const el = $('hand');
+    el.innerHTML = '';
+    const selectable = phase === 'mulligan' || phase === 'clock';
+    hand.forEach((c, i) => {
+      const d = document.createElement('div');
+      d.className = 'oc-card' + (selectable ? ' selectable' : '')
+        + (selected.has(i) ? ' selected' : '') + (freshIds.has(c.uid) ? ' fresh' : '');
+      d.dataset.mark = phase === 'clock' ? 'CLOCK' : '換';
+      d.innerHTML = cardHtml(c);
+      if (selectable) d.addEventListener('click', () => onHandClick(i));
+      el.appendChild(d);
+    });
+    $('hand_count').textContent = `(${hand.length})`;
+  }
+  function onHandClick(i) {
+    if (phase === 'mulligan') {
+      selected.has(i) ? selected.delete(i) : selected.add(i);
+    } else if (phase === 'clock') {
+      selected = selected.has(i) ? new Set() : new Set([i]);
+    }
+    render();
+  }
+
+  function btn(label, cls, onClick, disabled) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.innerHTML = label;
+    b.className = 'px-4 py-2 rounded-lg text-sm font-semibold transition-opacity ' + cls
+      + (disabled ? ' opacity-40 cursor-not-allowed' : ' hover:opacity-90');
+    b.disabled = !!disabled;
+    b.addEventListener('click', onClick);
+    return b;
+  }
+  const PRIMARY = 'text-white bg-gradient-to-r from-cyrene-pink via-cyrene-lavender to-cyrene-blue';
+  const GHOST = 'border border-white/10 bg-white/5 text-gray-200';
+
+  function renderActions() {
+    const bar = $('action_bar'), hint = $('phase_hint');
+    bar.innerHTML = '';
+    if (phase === 'mulligan') {
+      hint.textContent = '開局調度（整場僅 1 次）：點選要丟棄到休息室的手牌（0–5 張），再補抽同樣張數。';
+      bar.appendChild(btn(`確認調度（換 ${selected.size} 張）`, PRIMARY, confirmMulligan, false));
+      bar.appendChild(btn('不調度', GHOST, skipMulligan, false));
+    } else if (phase === 'clock') {
+      hint.textContent = '已完成抽牌階段（抽 1 張）。Clock 抽 2：選 1 張手牌放入 Clock 區（自己吃 1 點傷害），再抽 2 張。';
+      bar.appendChild(btn('Clock 抽 2', PRIMARY, confirmClock, selected.size !== 1));
+      bar.appendChild(btn('不使用', GHOST, skipClock, false));
+    } else {
+      hint.textContent = '模擬完成。可按「重新洗牌開局」再來一次。';
+    }
+  }
+
+  function renderZones() {
+    $('waiting').innerHTML = waiting.map(miniHtml).join('');
+    $('waiting_count').textContent = `(${waiting.length})`;
+    $('clock').innerHTML = clock.map(miniHtml).join('');
+    $('clock_count').textContent = `(${clock.length})`;
+    $('log').innerHTML = logLines.map(l => `<li>${esc(l)}</li>`).join('');
+  }
+
+  function renderSteps() {
+    const order = ['mulligan', 'clock', 'done'];
+    document.querySelectorAll('#steps .step-chip').forEach(el => {
+      const s = el.dataset.step;
+      el.classList.toggle('active', s === phase);
+      el.classList.toggle('done', order.indexOf(s) < order.indexOf(phase));
+    });
+  }
+
+  function renderProbs() {
+    const N = deck.length;
+    // Next-draw size used for the dynamic column
+    let k = 2, kLabel = '下 2 張（Clock）';
+    if (phase === 'mulligan') {
+      k = Math.max(selected.size, 1);
+      kLabel = `下 ${k} 張（調度）`;
+    } else if (phase === 'done') {
+      k = 2; kLabel = '下 2 張';
+    }
+    $('th_k').textContent = kLabel;
+    $('deck_left').textContent = N;
+    $('draw_k_hint').textContent = phase === 'mulligan'
+      ? `目前選了 ${selected.size} 張調度，補抽 ${selected.size} 張。`
+      : '';
+
+    const remain = {};
+    deck.forEach(c => { remain[c.key] = (remain[c.key] || 0) + 1; });
+
+    $('prob_body').innerHTML = cardDefs.map(def => {
+      const r = remain[def.key] || 0;
+      const p1 = N ? r / N : 0;
+      const pk = pAtLeastOne(N, r, k);
+      const thumb = def.img_url
+        ? `<div class="rounded-sm flex-shrink-0 overflow-hidden" style="width:2.3em">${imgTag(def, '')}</div>` : '';
+      const lv = def.level === 'CX' ? 'CX' : (def.level !== '' && def.level != null ? 'Lv' + def.level : '');
+      return `<tr class="prob-row border-t border-white/5${r === 0 ? ' empty' : ''}">
+        <td><div class="flex items-center gap-2">${thumb}
+          <div class="truncate" style="max-width:12em" title="${esc(def.card_name)}">${esc(def.card_name || def.card_number)}
+            <div class="text-[0.6rem] text-gray-500">${esc(def.card_number)} ${esc(lv)}</div></div></div></td>
+        <td>${r} / ${def.count}</td>
+        <td><div>${pct(p1)}</div><div class="prob-bar"><span style="width:${(p1*100).toFixed(1)}%"></span></div></td>
+        <td><div>${pct(pk)}</div><div class="prob-bar"><span style="width:${(pk*100).toFixed(1)}%"></span></div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function render() {
+    renderHand(); renderActions(); renderZones(); renderSteps(); renderProbs();
+  }
+
+  /* Any other landscape card art (e.g. 名場面) gets the same upright portrait slot as CX,
+     so every card takes the same size instead of shrinking to a short landscape strip. */
+  document.addEventListener('load', e => {
+    const img = e.target;
+    if (!(img instanceof HTMLImageElement) || !$('oc_root').contains(img)) return;
+    if (img.closest('.cx-box') || img.naturalWidth <= img.naturalHeight * 1.1) return;
+    const box = document.createElement('div');
+    box.className = 'cx-box';
+    img.replaceWith(box);
+    box.appendChild(img);
+  }, true);
+
+  /* ---------- zoom ---------- */
+  const ZKEY = 'ws_opening_sim.zoom';
+  const ZDEF = { card: 100, tbl: 100, wide: false, cxRot: 90 };
+  let zoom = { ...ZDEF };
+  try { Object.assign(zoom, JSON.parse(localStorage.getItem(ZKEY) || '{}')); } catch (e) {}
+
+  function applyZoom(save = true) {
+    zoom.card = Math.min(280, Math.max(50, Math.round(zoom.card)));
+    zoom.tbl = Math.min(170, Math.max(70, Math.round(zoom.tbl)));
+    const root = document.documentElement.style;
+    root.setProperty('--card-w', zoom.card + 'px');
+    root.setProperty('--tbl-scale', zoom.tbl / 100);
+    if (![90, -90, 0].includes(zoom.cxRot)) zoom.cxRot = 90;
+    root.setProperty('--cx-rot', zoom.cxRot + 'deg');
+    // Original orientation: keep the landscape art unrotated, fitted to the slot width
+    root.setProperty('--cx-w', zoom.cxRot === 0 ? '100%' : '139.75%');
+    $('cx_rot_btn').innerHTML = '<i class="fas fa-rotate-right mr-1"></i>CX 轉向：'
+      + ({ 90: '順時針 90°', '-90': '逆時針 90°', 0: '原本方向' })[zoom.cxRot];
+    document.body.classList.toggle('oc-wide', !!zoom.wide);
+    $('zoom_card').value = zoom.card; $('zoom_card_val').textContent = zoom.card + 'px';
+    $('zoom_tbl').value = zoom.tbl; $('zoom_tbl_val').textContent = zoom.tbl + '%';
+    $('wide_btn').classList.toggle('on', !!zoom.wide);
+    $('wide_btn').innerHTML = zoom.wide
+      ? '<i class="fas fa-compress mr-1"></i>標準寬度' : '<i class="fas fa-expand mr-1"></i>滿版';
+    if (save) { try { localStorage.setItem(ZKEY, JSON.stringify(zoom)); } catch (e) {} }
+  }
+  $('zoom_card').addEventListener('input', e => { zoom.card = +e.target.value; applyZoom(); });
+  $('zoom_tbl').addEventListener('input', e => { zoom.tbl = +e.target.value; applyZoom(); });
+  $('wide_btn').addEventListener('click', () => { zoom.wide = !zoom.wide; applyZoom(); });
+  $('cx_rot_btn').addEventListener('click', () => { zoom.cxRot = ({ 90: -90, '-90': 0, 0: 90 })[zoom.cxRot] ?? 90; applyZoom(); });
+  $('zoom_reset').addEventListener('click', () => { zoom = { ...ZDEF }; applyZoom(); });
+  $('hand').addEventListener('wheel', e => {
+    if (!e.ctrlKey) return;
+    e.preventDefault();
+    zoom.card += e.deltaY < 0 ? 10 : -10;
+    applyZoom();
+  }, { passive: false });
+  // The page-wide wide mode must not leak to other pages after navigation
+  window.addEventListener('pagehide', () => document.body.classList.remove('oc-wide'));
+  applyZoom(false);
+
+  /* ---------- deck loading ---------- */
+  function showError(msg) { $('error_text').textContent = msg; $('error_box').classList.remove('hidden'); }
+
+  async function loadDeck() {
+    const code = $('deck_code_input').value.trim();
+    $('error_box').classList.add('hidden');
+    if (!code) { showError('請輸入牌組代碼'); return; }
+    const source = document.querySelector('input[name="deck_source"]:checked')?.value || 'bottleneko';
+
+    $('sim_box').classList.add('hidden');
+    $('loading_box').classList.remove('hidden');
+    $('load_btn').disabled = true;
+    try {
+      const fd = new FormData();
+      fd.append('deck_code', code);
+      fd.append('source', source);
+      const resp = await fetch('{% url "ws_opening_sim:load_deck" %}', {
+        method: 'POST', headers: { 'X-CSRFToken': getCSRF() }, body: fd,
+      });
+      const data = await resp.json();
+      if (data.error) { showError(data.error); return; }
+
+      cardDefs = data.cards.map((c, i) => ({ ...c, key: i }));
+      $('deck_label').textContent = `${data.series_name || ''}　#${data.deck_code}`;
+      $('deck_meta').textContent = `共 ${data.total_cards} 張`
+        + (data.total_cards !== 50 ? '（注意：標準牌組為 50 張）' : '');
+      $('sim_box').classList.remove('hidden');
+      startGame();
+    } catch (err) {
+      showError('Network error: ' + err.message);
+    } finally {
+      $('loading_box').classList.add('hidden');
+      $('load_btn').disabled = false;
+    }
+  }
+
+  $('load_btn').addEventListener('click', loadDeck);
+  $('deck_code_input').addEventListener('keydown', e => { if (e.key === 'Enter') loadDeck(); });
+  $('restart_btn').addEventListener('click', startGame);
+})();
+</script>
+{% endblock %}
