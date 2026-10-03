@@ -40,6 +40,7 @@ urlpatterns = [
     path('finance_brief/', include(('finance_brief.urls', 'finance_brief'))),
     path('ws_damage_sim/', include(('apps.ws_damage_sim.urls', 'ws_damage_sim'))),
     path('ws_to_discord/', include(('apps.ws_to_discord.urls', 'ws_to_discord'))),
+    path('ws_opening_sim/', include(('apps.ws_opening_sim.urls', 'ws_opening_sim'))),
     path('tournament_pie/', include(('tournament_pie.urls', 'tournament_pie'))),
 
     path('login/', auth_views.LoginView.as_view(template_name='auth/login.html'), name='login'),
