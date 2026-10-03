@@ -1,653 +1,890 @@
 {% extends "base.html" %}
 
-{% block title %}Home - Workshop{% endblock %}
+{% block title %}sakanasa工坊{% endblock %}
 
 {% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  .typing-cursor {
-    border-right: 3px solid #C3ABE4;
-    animation: blink-caret 0.8s step-end infinite;
+  /* ── Silk threads canvas ── */
+  #silk-canvas {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0;
+    mix-blend-mode: screen; opacity: 0.45;
   }
 
-  @keyframes blink-caret {
+  /* ── Monospace label ── */
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
 
-    0%,
-    100% {
-      border-color: #C3ABE4;
-    }
-
-    50% {
-      border-color: transparent;
-    }
+  /* ── Section rail label ── */
+  .section-label {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px; letter-spacing: 2px; color: rgba(255,255,255,0.28);
+    display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+  }
+  .section-label::before {
+    content: '';
+    display: inline-block; width: 24px; height: 1px;
+    background: rgba(255,255,255,0.14);
   }
 
-  .card-enter {
-    opacity: 0;
-    transform: translateY(20px);
-    animation: card-fade-in 0.6s ease forwards;
+  /* ── Section head divider ── */
+  .section-head {
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    padding-bottom: 20px; margin-bottom: 32px;
   }
 
-  .card-enter:nth-child(1) {
-    animation-delay: 0.0s;
+  /* ── Availability pill ── */
+  .avail-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(26,26,46,0.55);
+    font-size: 12px; color: rgba(255,255,255,0.5);
+    margin-bottom: 28px;
+  }
+  .avail-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    background: #4ade80;
+    box-shadow: 0 0 0 3px rgba(74,222,128,0.22);
   }
 
-  .card-enter:nth-child(2) {
-    animation-delay: 0.12s;
+  /* ── Hero cursor blink ── */
+  @keyframes hero-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .hero-cursor {
+    display: inline-block; width: 0.055em; height: 0.78em;
+    background: #C3ABE4; margin-left: 6px; vertical-align: middle;
+    animation: hero-blink 0.9s step-end infinite;
   }
 
-  .card-enter:nth-child(3) {
-    animation-delay: 0.24s;
+  /* ── Meta card ── */
+  .meta-card {
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(26,26,46,0.55);
+    border-radius: 14px; backdrop-filter: blur(12px);
+    padding: 18px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px; line-height: 1.7; color: rgba(255,255,255,0.5);
+  }
+  .meta-row {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.07);
+  }
+  .meta-row:last-child { border-bottom: none; }
+
+  /* ── Project card ── */
+  .proj-card {
+    display: block; text-decoration: none; color: inherit;
+    padding: 22px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(26,26,46,0.55);
+    border-radius: 16px; backdrop-filter: blur(12px);
+    position: relative; overflow: hidden;
+    transition: transform 0.35s cubic-bezier(.2,.8,.2,1),
+                box-shadow 0.3s;
+    opacity: 0; transform: translateY(16px);
+  }
+  .proj-card.visible {
+    animation: proj-fade 0.55s cubic-bezier(.2,.8,.2,1) both;
+  }
+  @keyframes proj-fade {
+    from { opacity:0; transform:translateY(16px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .proj-card:hover { transform: translateY(-4px); }
+  .proj-underline {
+    position: absolute; left:0; bottom:0; height:2px; width:0%;
+    transition: width 0.5s cubic-bezier(.2,.8,.2,1);
+  }
+  .proj-card:hover .proj-underline { width: 100%; }
+  .proj-arrow { transition: transform 0.3s; }
+  .proj-card:hover .proj-arrow { transform: translateX(4px); }
+
+  /* ── Skill bar ── */
+  @keyframes skill-grow { from{transform:scaleX(0)} to{transform:scaleX(1)} }
+  .skill-bar {
+    height: 4px; border-radius: 999px; transform-origin: left;
+    animation: skill-grow 1s cubic-bezier(.2,.8,.2,1) 0.3s both;
   }
 
-  .card-enter:nth-child(4) {
-    animation-delay: 0.36s;
+  /* ── Stack table ── */
+  .stack-row { transition: background 0.2s; }
+  .stack-row:hover { background: rgba(255,255,255,0.03); }
+
+  /* ── Copy email button ── */
+  .copy-btn {
+    padding: 12px 20px; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(26,26,46,0.55); color: rgba(255,255,255,0.75);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    font-family: inherit;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: all 0.2s; white-space: nowrap;
+    backdrop-filter: blur(12px);
+  }
+  .copy-btn:hover {
+    border-color: rgba(195,171,228,0.4);
+    background: rgba(195,171,228,0.08); color: #C3ABE4;
+  }
+  .copy-btn.copied {
+    border-color: rgba(195,171,228,0.5);
+    background: rgba(195,171,228,0.12); color: #C3ABE4;
   }
 
-  .card-enter:nth-child(5) {
-    animation-delay: 0.48s;
+  /* ── Tag chip helper ── */
+  .tag-chip {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10px; padding: 3px 8px; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.4);
   }
-
-  .card-enter:nth-child(6) {
-    animation-delay: 0.60s;
-  }
-
-  .card-enter:nth-child(7) {
-    animation-delay: 0.72s;
-  }
-
-  @keyframes card-fade-in {
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Tech tags */
-  .tech-tag {
-    font-size: 0.65rem;
-    padding: 2px 8px;
-    border-radius: 9999px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.05);
-    color: #9ca3af;
-    white-space: nowrap;
-    transition: all 0.2s;
-  }
-
-  .tech-tag:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #d1d5db;
-  }
-
-  /* About section */
-  .about-fade-in {
-    opacity: 0;
-    transform: translateY(16px);
-    animation: card-fade-in 0.7s ease 0.2s forwards;
-  }
-
-  /* Skill bar */
-  .skill-bar-fill {
-    height: 100%;
-    border-radius: 9999px;
-    transition: width 1.2s ease;
-  }
-
-  /* Tech stack icons */
-  .tech-icon-hover {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-
-  .tech-icon-hover:hover {
-    transform: translateY(-4px) scale(1.08);
-    box-shadow: 0 4px 20px rgba(195, 171, 228, 0.25);
-  }
-
-  /* Stats counter */
-  .stat-number {
-    font-variant-numeric: tabular-nums;
+  .accent-chip {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10px; padding: 3px 8px; border-radius: 999px;
+    letter-spacing: 0.5px;
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
-  <h1 class="text-4xl sm:text-5xl md:text-7xl font-display font-bold gradient-text mb-6 leading-tight">
-    <span id="typed-text"></span><span class="typing-cursor">&nbsp;</span>
-  </h1>
-  <p class="text-base sm:text-lg text-gray-400 max-w-2xl leading-relaxed whitespace-pre-line" data-i18n="home.subtitle">
-    夢幻般的工具與專案集合。
-    探索下方的模組開始使用。</p>
-</section>
+<!-- Silk threads (behind content) -->
+<canvas id="silk-canvas" aria-hidden></canvas>
 
-<!-- About Me Section -->
-<section class="about-fade-in mb-16">
-  <div class="glass rounded-2xl p-8 md:p-10 max-w-4xl mx-auto relative">
-    {% if user.is_authenticated %}
-    <a href="{% url 'home_page:edit_profile' %}" class="btn btn-sm btn-ghost absolute top-4 right-4">
-      <i class="fas fa-pen-to-square"></i> Edit Profile
-    </a>
-    {% endif %}
-    <div class="flex flex-col md:flex-row gap-8 items-start">
-      <!-- Avatar & Info -->
-      <div class="flex-shrink-0 flex flex-col items-center md:items-start gap-3">
-        {% if profile and profile.avatar %}
-        <img src="{{ profile.avatar.url }}" alt="{{ profile.display_name }}"
-             class="w-20 h-20 rounded-2xl object-cover shadow-lg">
-        {% else %}
-        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyrene-pink via-cyrene-lavender to-cyrene-blue flex items-center justify-center text-3xl font-display font-bold text-white shadow-lg">
-          S
-        </div>
+<!-- ────────────────────────────────────────────────────────────
+     § 00 — Hero
+──────────────────────────────────────────────────────────────── -->
+<section id="top" class="pt-4 pb-4 relative" style="z-index:1;">
+  <div class="section-label">§ 00 — INTRO</div>
+
+  <div id="hero-grid" class="grid gap-10 items-end"
+       style="grid-template-columns: minmax(0,1fr) 280px;">
+    <!-- Left: name + bio + CTA -->
+    <div>
+      <div class="avail-pill">
+        <span class="avail-dot"></span>
+        <span data-i18n-new="hero.available">就學中</span>
+      </div>
+
+      <h1 class="font-display font-semibold text-white"
+          style="font-size:clamp(52px,8.5vw,116px); line-height:0.92;
+                 letter-spacing:-0.04em; margin:0;">
+        Sakanasa<span class="hero-cursor"></span>
+      </h1>
+
+      <div class="mt-5" style="font-size:21px; color:rgba(255,255,255,0.55);
+                               font-family:'Space Grotesk','Noto Sans TC',sans-serif;">
+        <span class="text-white font-medium" data-i18n-new="hero.role1">全端開發者</span>
+        <span style="color:rgba(255,255,255,0.28);"> · </span>
+        <span data-i18n-new="hero.role2">座標-高雄、台南</span>
+      </div>
+
+      <p class="mt-4 text-sm leading-relaxed max-w-lg"
+         style="color:rgba(255,255,255,0.48);"
+         data-i18n-new="hero.bio">
+        熱愛用程式碼解決問題。專注於 Django、資料抓取、LLM 整合，以及奇怪小工具的製作。
+      </p>
+
+      <div class="flex flex-wrap gap-3 mt-7">
+        <a href="#work" class="btn btn-md btn-primary">
+          <span data-i18n-new="hero.cta1">查看作品</span> →
+        </a>
+        <a href="#stack" class="btn btn-md btn-secondary">
+          <span data-i18n-new="hero.cta2">技術彙整</span>
+        </a>
+        {% if user.is_authenticated %}
+        <a href="{% url 'home_page:edit_profile' %}" class="btn btn-md btn-ghost">
+          <i class="fas fa-pen-to-square"></i> Edit Profile
+        </a>
         {% endif %}
-        <h2 class="text-xl font-display font-bold text-white">
-          {% if profile %}{{ profile.display_name }}{% else %}Sakanasa{% endif %}
-        </h2>
-        <p class="text-xs text-gray-500">
-          {% if profile %}{{ profile.role }}{% else %}Full-Stack Developer{% endif %}
-        </p>
       </div>
+    </div>
 
-      <!-- Bio & Skills -->
-      <div class="flex-1 space-y-4">
-        <p class="text-gray-300 text-sm leading-relaxed">
-          {% if profile and profile.bio %}{{ profile.bio }}
-          {% else %}熱愛用程式解決問題的開發者。擅長 Python 後端開發與資料自動化，喜歡把實用的想法做成方便的小工具。這個工坊收錄了我在學習 Django 過程中打造的各種專案。
-          {% endif %}
-        </p>
+    <!-- Right: meta card -->
+    <aside class="meta-card hidden md:block">
+      <div class="mono mb-2" style="font-size:10px; letter-spacing:1.5px;
+                                    color:rgba(255,255,255,0.25);"
+           data-i18n-new="meta.status">現況</div>
+      <div class="meta-row">
+        <span style="color:rgba(255,255,255,0.28);">loc</span>
+        <span class="text-white">TW</span>
+      </div>
+      <div class="meta-row">
+        <span style="color:rgba(255,255,255,0.28);">role</span>
+        <span class="text-white">Student</span>
+      </div>
+      <div class="meta-row">
+        <span style="color:rgba(255,255,255,0.28);">apps</span>
+        <span class="text-white">11 shipped</span>
+      </div>
+      <div class="meta-row">
+        <span style="color:rgba(255,255,255,0.28);">focus</span>
+        <span class="text-white">Django · LLM</span>
+      </div>
+      <div class="meta-row">
+        <span style="color:rgba(255,255,255,0.28);">status</span>
+        <span style="color:#4ade80;">● online</span>
+      </div>
+    </aside>
+  </div>
+</section>
 
-        <!-- Skill bars -->
-        <div class="space-y-3 pt-2">
-          {% if profile and profile.skills.all %}
-            {% for skill in profile.skills.all %}
-            <div>
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-gray-400">{{ skill.name }}</span>
-                <span class="text-{{ skill.label_color }}">{{ skill.percentage }}%</span>
-              </div>
-              <div class="w-full h-1.5 rounded-full bg-white/5">
-                <div class="skill-bar-fill
-                  {% if skill.gradient == 'lavender-blue' %}bg-gradient-to-r from-cyrene-lavender to-cyrene-blue
-                  {% elif skill.gradient == 'pink-lavender' %}bg-gradient-to-r from-cyrene-pink to-cyrene-lavender
-                  {% elif skill.gradient == 'blue-pink' %}bg-gradient-to-r from-cyrene-blue to-cyrene-pink
-                  {% elif skill.gradient == 'lavender-pink' %}bg-gradient-to-r from-cyrene-lavender to-cyrene-pink
-                  {% endif %}"
-                     style="width:{{ skill.percentage }}%"></div>
-              </div>
-            </div>
-            {% endfor %}
-          {% else %}
-            <div>
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-gray-400">Python / Django</span>
-                <span class="text-cyrene-lavender">85%</span>
-              </div>
-              <div class="w-full h-1.5 rounded-full bg-white/5">
-                <div class="skill-bar-fill bg-gradient-to-r from-cyrene-lavender to-cyrene-blue" style="width:85%"></div>
-              </div>
-            </div>
-            <div>
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-gray-400">Web Scraping / Selenium</span>
-                <span class="text-cyrene-pink">80%</span>
-              </div>
-              <div class="w-full h-1.5 rounded-full bg-white/5">
-                <div class="skill-bar-fill bg-gradient-to-r from-cyrene-pink to-cyrene-lavender" style="width:80%"></div>
-              </div>
-            </div>
-            <div>
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-gray-400">HTML / CSS / JavaScript</span>
-                <span class="text-cyrene-blue">75%</span>
-              </div>
-              <div class="w-full h-1.5 rounded-full bg-white/5">
-                <div class="skill-bar-fill bg-gradient-to-r from-cyrene-blue to-cyrene-pink" style="width:75%"></div>
-              </div>
-            </div>
-            <div>
-              <div class="flex justify-between text-xs mb-1">
-                <span class="text-gray-400">Data Visualization</span>
-                <span class="text-cyrene-lavender">70%</span>
-              </div>
-              <div class="w-full h-1.5 rounded-full bg-white/5">
-                <div class="skill-bar-fill bg-gradient-to-r from-cyrene-lavender to-cyrene-pink" style="width:70%"></div>
-              </div>
-            </div>
-          {% endif %}
+<!-- ────────────────────────────────────────────────────────────
+     § 01 — Work
+──────────────────────────────────────────────────────────────── -->
+<section id="work" class="mt-20 relative" style="z-index:1;">
+  <div class="section-head">
+    <div class="section-label">§ 01 — WORK</div>
+    <div class="flex items-end justify-between gap-6 flex-wrap">
+      <div>
+        <h2 class="font-display font-semibold text-white"
+            style="font-size:clamp(28px,4vw,44px); letter-spacing:-0.02em; margin:0;"
+            data-i18n-new="sections.work">精選作品</h2>
+        <p class="mt-2 text-sm" style="color:rgba(255,255,255,0.4);"
+           data-i18n-new="sections.workSub">十一個由 Django 驅動的小型工具與實驗。</p>
+      </div>
+      <div class="mono" style="font-size:11px; color:rgba(255,255,255,0.28);">11 / 11 shipped</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="proj-grid">
+
+    <!-- 01 Tournament Pie -->
+    <a href="{% url 'tournament_pie:editor' %}" class="proj-card">
+      <div class="flex justify-between items-center mb-7 mono" style="font-size:11px; color:rgba(255,255,255,0.3);">
+        <span>01</span>
+        <span class="accent-chip" style="background:rgba(168,216,234,0.15); color:#A8D8EA;" data-i18n-new="badge.visual">視覺化</span>
+      </div>
+      <h3 class="font-display font-semibold text-white mb-2"
+          style="font-size:18px; letter-spacing:-0.01em;" data-i18n="home.tournament_pie_title">比賽殺招連動餅圖</h3>
+      <p class="text-sm mb-5" style="color:rgba(255,255,255,0.45); line-height:1.55;" data-i18n="home.tournament_pie_desc">
+        輸入貓罐子牌組網址，自動解析所有殺招連動並生成互動式圓餅圖。支援卡圖拖移縮放、背景換圖、系列統計表，可匯出 PNG。
+      </p>
+      <div class="flex flex-wrap gap-1.5 mb-5">
+        <span class="tag-chip">Konva.js</span>
+        <span class="tag-chip">Bottleneko API</span>
+        <span class="tag-chip">Canvas</span>
+      </div>
+      <div class="proj-arrow flex items-center gap-1.5 text-xs font-medium" style="color:#A8D8EA;">
+        <span data-i18n="home.explore">探索</span> →
+      </div>
+      <div class="proj-underline" style="background:#A8D8EA;"></div>
+    </a>
+
+    <!-- 02 Deck Statistics -->
+    <a href="{% url 'pie_chart:dashboard' %}" class="proj-card">
+      <div class="flex justify-between items-center mb-7 mono" style="font-size:11px; color:rgba(255,255,255,0.3);">
+        <span>02</span>
+        <span class="accent-chip" style="background:rgba(242,167,195,0.15); color:#F2A7C3;" data-i18n-new="badge.visual">視覺化</span>
+      </div>
+      <h3 class="font-display font-semibold text-white mb-2"
+          style="font-size:18px; letter-spacing:-0.01em;" data-i18n="home.deck_stats_title">牌組統計</h3>
+      <p class="text-sm mb-5" style="color:rgba(255,255,255,0.45); line-height:1.55;" data-i18n="home.deck_stats_desc">
+        分析卡牌遊戲比賽的牌組分佈。輸入牌組代碼，生成精美的系列佔比圓餅圖。
+      </p>
+      <div class="flex flex-wrap gap-1.5 mb-5">
+        <span class="tag-chip">Selenium</span>
+        <span class="tag-chip">Matplotlib</span>
+        <span class="tag-chip">NumPy</span>
+      </div>
+      <div class="proj-arrow flex items-center gap-1.5 text-xs font-medium" style="color:#F2A7C3;">
+        <span data-i18n="home.explore">探索</span> →
+      </div>
+      <div class="proj-underline" style="background:#F2A7C3;"></div>
+    </a>
+
+    <!-- 03 Deck AI Analysis -->
+    <a href="{% url 'deck_analysis:index' %}" class="proj-card">
+      <div class="flex justify-between items-center mb-7 mono" style="font-size:11px; color:rgba(255,255,255,0.3);">
+        <span>03</span>
+        <span class="accent-chip" style="background:rgba(242,167,195,0.15); color:#F2A7C3;" data-i18n-new="badge.ai">AI</span>
+      </div>
+      <h3 class="font-display font-semibold text-white mb-2"
+          style="font-size:18px; letter-spacing:-0.01em;" data-i18n="home.deck_ai_title">牌組 AI 分析</h3>
+      <p class="text-sm mb-5" style="color:rgba(255,255,255,0.45); line-height:1.55;" data-i18n="home.deck_ai_desc">
+        輸入 decklog 牌組代碼，AI 自動爬取卡牌清單並進行 Weiß Schwarz 策略分析。
+      </p>
+      <div class="flex flex-wrap gap-1.5 mb-5">
+        <span class="tag-chip">Ollama</span>
+        <span class="tag-chip">Qwen 2.5</span>
+        <span class="tag-chip">REST</span>
+      </div>
+      <div class="proj-arrow flex items-center gap-1.5 text-xs font-medium" style="color:#F2A7C3;">
+        <span data-i18n="home.explore">探索</span> →
+      </div>
+      <div class="proj-underline" style="background:#F2A7C3;"></div>
+    </a>
+
+    <!-- 04 Deck Showcase -->
+    <a href="{% url 'deck_showcase:showcase' %}" class="proj-card">
+      <div class="flex justify-between items-center mb-7 mono" style="font-size:11px; color:rgba(255,255,255,0.3);">
+        <span>04</span>
+        <span class="accent-chip" style="background:rgba(168,216,234,0.15); color:#A8D8EA;" data-i18n-new="badge.deck">牌組</span>
+      </div>
+      <h3 class="font-display font-semibold text-white mb-2"
+          style="font-size:18px; letter-spacing:-0.01em;" data-i18n="home.deck_showcase_title">牌組展示圖</h3>
+      <p class="text-sm mb-5" style="color:rgba(255,255,255,0.45); line-height:1.55;" data-i18n="home.deck_showcase_desc">
+        選擇想展示的卡牌，自訂背景與排列，生成精美的扇形展示圖。支援多種來源與玩家資訊。
+      </p>
+      <div class="flex flex-wrap gap-1.5 mb-5">
+        <span class="tag-chip">Pillow</span>
+        <span class="tag-chip">Requests</span>
+        <span class="tag-chip">Canvas</span>
+      </div>
+      <div class="proj-arrow flex items-center gap-1.5 text-xs font-medium" style="color:#A8D8EA;">
+        <span data-i18n="home.explore">探索</span> →
+      </div>
+      <div class="proj-underline" style="background:#A8D8EA;"></div>
+    </a>
+
+    <!-- 05 WS Damage Simulator -->
+    <a href="{% url 'ws_damage_sim:index' %}" class="proj-card">
+      <div class="flex justify-between items-center mb-7 mono" style="font-size:11px; color:rgba(255,255,255,0.3);">
+        <span>05</span>
+        <span class="accent-chip" style="background:rgba(195,171,228,0.15); color:#C3ABE4;" data-i18n-new="badge.sim">模擬</span>
+      </div>
+      <h3 class="font-display font-semibold text-white mb-2"
+          style="font-size:18px; letter-spacing:-0.01em;" data-i18n="home.damage_sim_title">WS 殺招模擬器</h3>
+      <p class="text-sm mb-5" style="color:rgba(255,255,255,0.45); line-height:1.55;" data-i18n="home.damage_sim_desc">
+        拖拉積木組合 Weiß Schwarz 殺招，蒙特卡羅模擬計算致命率，支援存檔殺招與 PNG/CSV 匯出。
+      </p>
+      <div class="flex flex-wrap gap-1.5 mb-5">
+        <span class="tag-chip">Monte Carlo</span>
+        <span class="tag-chip">NumPy</span>
+        <span class="tag-chip">Canvas API</span>
+      </div>
+      <div class="proj-arrow flex items-center gap-1.5 text-xs font-medium" style="color:#C3ABE4;">
+        <span data-i18n="home.explore">探索</span> →
+      </div>
+      <div class="proj-underline" style="background:#C3ABE4;"></div>
+    </a>
+
+    <!-- 06 Finance Brief -->
+    <a href="{% url 'finance_brief:dashboard' %}" class="proj-card">
+      <div class="flex justify-between items-center mb-7 mono" style="font-size:11px; color:rgba(255,255,255,0.3);">
+        <span>06</span>
+        <span class="accent-chip" style="background:rgba(242,167,195,0.15); color:#F2A7C3;" data-i18n-new="badge.brief">快報</span>
+      </div>
+      <h3 class="font-display font-semibold text-white mb-2"
+          style="font-size:18px; letter-spacing:-0.01em;" data-i18n="home.finance_brief_title">今日金融快報</h3>
+      <p class="text-sm mb-5" style="color:rgba(255,255,255,0.45); line-height:1.55;" data-i18n="home.finance_brief_desc">
+        每日自動聚合股票指數、外匯、大宗商品與財經新聞，由 AI 生成繁體中文市場總覽。
+      </p>
+      <div class="flex flex-wrap gap-1.5 mb-5">
+        <span class="tag-chip">Ollama LLM</span>
+        <span class="tag-chip">RSS</span>
+        <span class="tag-chip">Yahoo API</span>
+      </div>
+      <div class="proj-arrow flex items-center gap-1.5 text-xs font-medium" style="color:#F2A7C3;">
+        <span data-i18n="home.explore">探索</span> →
+      </div>
+      <div class="proj-underline" style="background:#F2A7C3;"></div>
+    </a>
+
+    <!-- 07 Stock Market -->
+    <a href="{% url 'stock_market:dashboard' %}" class="proj-card">
+      <div class="flex justify-between items-center mb-7 mono" style="font-size:11px; color:rgba(255,255,255,0.3);">
+        <span>07</span>
+        <span class="accent-chip" style="background:rgba(168,216,234,0.15); color:#A8D8EA;" data-i18n-new="badge.market">行情</span>
+      </div>
+      <h3 class="font-display font-semibold text-white mb-2"
+          style="font-size:18px; letter-spacing:-0.01em;" data-i18n="home.stock_title">股市指數儀表板</h3>
+      <p class="text-sm mb-5" style="color:rgba(255,255,255,0.45); line-height:1.55;" data-i18n="home.stock_desc">
+        即時追蹤美股與台股主要指數。查看 S&P 500、NASDAQ、道璩、台灣加權、費半等趨勢圖與漲跌幅。
+      </p>
+      <div class="flex flex-wrap gap-1.5 mb-5">
+        <span class="tag-chip">yfinance</span>
+        <span class="tag-chip">Canvas API</span>
+        <span class="tag-chip">REST API</span>
+      </div>
+      <div class="proj-arrow flex items-center gap-1.5 text-xs font-medium" style="color:#A8D8EA;">
+        <span data-i18n="home.explore">探索</span> →
+      </div>
+      <div class="proj-underline" style="background:#A8D8EA;"></div>
+    </a>
+
+    <!-- 08 Journal -->
+    <a href="{% url 'journal:list' %}" class="proj-card">
+      <div class="flex justify-between items-center mb-7 mono" style="font-size:11px; color:rgba(255,255,255,0.3);">
+        <span>08</span>
+        <span class="accent-chip" style="background:rgba(195,171,228,0.15); color:#C3ABE4;" data-i18n-new="badge.log">記錄</span>
+      </div>
+      <h3 class="font-display font-semibold text-white mb-2"
+          style="font-size:18px; letter-spacing:-0.01em;" data-i18n="home.journal_title">日誌</h3>
+      <p class="text-sm mb-5" style="color:rgba(255,255,255,0.45); line-height:1.55;" data-i18n="home.journal_desc">
+        個人日誌與筆記。在時間牆上記錄想法、靈感與每日感想。
+      </p>
+      <div class="flex flex-wrap gap-1.5 mb-5">
+        <span class="tag-chip">Django ORM</span>
+        <span class="tag-chip">Auth</span>
+        <span class="tag-chip">CRUD</span>
+      </div>
+      <div class="proj-arrow flex items-center gap-1.5 text-xs font-medium" style="color:#C3ABE4;">
+        <span data-i18n="home.explore">探索</span> →
+      </div>
+      <div class="proj-underline" style="background:#C3ABE4;"></div>
+    </a>
+
+    <!-- 09 Color Palette -->
+    <a href="{% url 'color_palette:index' %}" class="proj-card">
+      <div class="flex justify-between items-center mb-7 mono" style="font-size:11px; color:rgba(255,255,255,0.3);">
+        <span>09</span>
+        <span class="accent-chip" style="background:rgba(168,216,234,0.15); color:#A8D8EA;" data-i18n-new="badge.tool">工具</span>
+      </div>
+      <h3 class="font-display font-semibold text-white mb-2"
+          style="font-size:18px; letter-spacing:-0.01em;" data-i18n="home.color_palette_title">調色盤生成器</h3>
+      <p class="text-sm mb-5" style="color:rgba(255,255,255,0.45); line-height:1.55;" data-i18n="home.color_palette_desc">
+        選擇一個基礎色，自動生成互補色、類比色、三色組等多種配色方案。點擊色卡即可複製色碼。
+      </p>
+      <div class="flex flex-wrap gap-1.5 mb-5">
+        <span class="tag-chip">Canvas</span>
+        <span class="tag-chip">Color Theory</span>
+        <span class="tag-chip">Clipboard API</span>
+      </div>
+      <div class="proj-arrow flex items-center gap-1.5 text-xs font-medium" style="color:#A8D8EA;">
+        <span data-i18n="home.explore">探索</span> →
+      </div>
+      <div class="proj-underline" style="background:#A8D8EA;"></div>
+    </a>
+
+    <!-- 10 Pomodoro -->
+    <a href="{% url 'pomodoro:index' %}" class="proj-card">
+      <div class="flex justify-between items-center mb-7 mono" style="font-size:11px; color:rgba(255,255,255,0.3);">
+        <span>10</span>
+        <span class="accent-chip" style="background:rgba(195,171,228,0.15); color:#C3ABE4;" data-i18n-new="badge.tool">工具</span>
+      </div>
+      <h3 class="font-display font-semibold text-white mb-2"
+          style="font-size:18px; letter-spacing:-0.01em;" data-i18n="home.pomodoro_title">番茄鐘計時器</h3>
+      <p class="text-sm mb-5" style="color:rgba(255,255,255,0.45); line-height:1.55;" data-i18n="home.pomodoro_desc">
+        25/5 分鐘番茄工作法計時器。自訂時長、音效提醒、專注次數統計，助你高效專注。
+      </p>
+      <div class="flex flex-wrap gap-1.5 mb-5">
+        <span class="tag-chip">Timer API</span>
+        <span class="tag-chip">Notifications</span>
+        <span class="tag-chip">LocalStorage</span>
+      </div>
+      <div class="proj-arrow flex items-center gap-1.5 text-xs font-medium" style="color:#C3ABE4;">
+        <span data-i18n="home.explore">探索</span> →
+      </div>
+      <div class="proj-underline" style="background:#C3ABE4;"></div>
+    </a>
+
+    <!-- 11 WS → Discord -->
+    <a href="{% url 'ws_to_discord:index' %}" class="proj-card">
+      <div class="flex justify-between items-center mb-7 mono" style="font-size:11px; color:rgba(255,255,255,0.3);">
+        <span>11</span>
+        <span class="accent-chip" style="background:rgba(88,101,242,0.15); color:#7289DA; letter-spacing:0.5px;" data-i18n-new="badge.integration">整合</span>
+      </div>
+      <h3 class="font-display font-semibold text-white mb-2"
+          style="font-size:18px; letter-spacing:-0.01em;" data-i18n="home.wstodiscord_title">WsToDiscord Bot</h3>
+      <p class="text-sm mb-5" style="color:rgba(255,255,255,0.45); line-height:1.55;" data-i18n="home.wstodiscord_desc">
+        自動監控日本 WS 卡牌店庫存，每 30 分鐘偵測新品、價格與售完事件，透過 Discord Rich Embeds 即時推播，支援 Slash Commands 查詢。
+      </p>
+      <div class="flex flex-wrap gap-1.5 mb-5">
+        <span class="tag-chip">discord.py</span>
+        <span class="tag-chip">BeautifulSoup4</span>
+        <span class="tag-chip">Async</span>
+      </div>
+      <div class="proj-arrow flex items-center gap-1.5 text-xs font-medium" style="color:#7289DA;">
+        <span data-i18n="home.explore">探索</span> →
+      </div>
+      <div class="proj-underline" style="background:#7289DA;"></div>
+    </a>
+
+  </div>
+</section>
+
+<!-- ────────────────────────────────────────────────────────────
+     § 02 — Skills
+──────────────────────────────────────────────────────────────── -->
+<section id="skills" class="mt-20 relative" style="z-index:1;">
+  <div class="section-head">
+    <div class="section-label">§ 02 — SKILLS</div>
+    <h2 class="font-display font-semibold text-white"
+        style="font-size:clamp(28px,4vw,44px); letter-spacing:-0.02em; margin:0;"
+        data-i18n-new="sections.skills">能力指標</h2>
+    <p class="mt-2 text-sm" style="color:rgba(255,255,255,0.4);"
+       data-i18n-new="sections.skillsSub">自評 — 日常在用的技術比例。</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-6">
+
+    {% if profile and profile.skills.all %}
+      {% for skill in profile.skills.all %}
+      <div>
+        <div class="flex justify-between text-sm mb-2">
+          <span class="text-gray-300">{{ skill.name }}</span>
+          <span class="mono" style="font-size:12px; color:#C3ABE4;">{{ skill.percentage }}%</span>
+        </div>
+        <div class="w-full" style="height:4px; border-radius:999px; background:rgba(255,255,255,0.07);">
+          <div class="skill-bar
+            {% if skill.gradient == 'lavender-blue' %}bg-gradient-to-r from-cyrene-lavender to-cyrene-blue
+            {% elif skill.gradient == 'pink-lavender' %}bg-gradient-to-r from-cyrene-pink to-cyrene-lavender
+            {% elif skill.gradient == 'blue-pink' %}bg-gradient-to-r from-cyrene-blue to-cyrene-pink
+            {% elif skill.gradient == 'lavender-pink' %}bg-gradient-to-r from-cyrene-lavender to-cyrene-pink
+            {% endif %}" style="width:{{ skill.percentage }}%;"></div>
         </div>
       </div>
-    </div>
+      {% endfor %}
+    {% else %}
+      <div>
+        <div class="flex justify-between text-sm mb-2">
+          <span class="text-gray-300">Python / Django</span>
+          <span class="mono" style="font-size:12px; color:#C3ABE4;">85%</span>
+        </div>
+        <div class="w-full" style="height:4px; border-radius:999px; background:rgba(255,255,255,0.07);">
+          <div class="skill-bar" style="width:85%; background:linear-gradient(90deg,#C3ABE4,#A8D8EA);"></div>
+        </div>
+      </div>
+      <div>
+        <div class="flex justify-between text-sm mb-2">
+          <span class="text-gray-300">Web Scraping / Selenium</span>
+          <span class="mono" style="font-size:12px; color:#F2A7C3;">80%</span>
+        </div>
+        <div class="w-full" style="height:4px; border-radius:999px; background:rgba(255,255,255,0.07);">
+          <div class="skill-bar" style="width:80%; background:linear-gradient(90deg,#F2A7C3,#C3ABE4);"></div>
+        </div>
+      </div>
+      <div>
+        <div class="flex justify-between text-sm mb-2">
+          <span class="text-gray-300">HTML / CSS / JavaScript</span>
+          <span class="mono" style="font-size:12px; color:#A8D8EA;">75%</span>
+        </div>
+        <div class="w-full" style="height:4px; border-radius:999px; background:rgba(255,255,255,0.07);">
+          <div class="skill-bar" style="width:75%; background:linear-gradient(90deg,#A8D8EA,#F2A7C3);"></div>
+        </div>
+      </div>
+      <div>
+        <div class="flex justify-between text-sm mb-2">
+          <span class="text-gray-300">LLM Integration</span>
+          <span class="mono" style="font-size:12px; color:#F2A7C3;">78%</span>
+        </div>
+        <div class="w-full" style="height:4px; border-radius:999px; background:rgba(255,255,255,0.07);">
+          <div class="skill-bar" style="width:78%; background:linear-gradient(90deg,#F2A7C3,#A8D8EA);"></div>
+        </div>
+      </div>
+      <div>
+        <div class="flex justify-between text-sm mb-2">
+          <span class="text-gray-300">Data Visualization</span>
+          <span class="mono" style="font-size:12px; color:#C3ABE4;">70%</span>
+        </div>
+        <div class="w-full" style="height:4px; border-radius:999px; background:rgba(255,255,255,0.07);">
+          <div class="skill-bar" style="width:70%; background:linear-gradient(90deg,#C3ABE4,#F2A7C3);"></div>
+        </div>
+      </div>
+      <div>
+        <div class="flex justify-between text-sm mb-2">
+          <span class="text-gray-300">SQL / SQLite</span>
+          <span class="mono" style="font-size:12px; color:#A8D8EA;">72%</span>
+        </div>
+        <div class="w-full" style="height:4px; border-radius:999px; background:rgba(255,255,255,0.07);">
+          <div class="skill-bar" style="width:72%; background:linear-gradient(90deg,#A8D8EA,#C3ABE4);"></div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</section>
 
-    <!-- Stats Row -->
-    <div class="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/5">
-      <div class="text-center">
-        <div class="text-2xl font-display font-bold gradient-text stat-number">9</div>
-        <div class="text-xs text-gray-500 mt-1" data-i18n="home.stat_projects">個專案模組</div>
-      </div>
-      <div class="text-center">
-        <div class="text-2xl font-display font-bold gradient-text stat-number">4</div>
-        <div class="text-xs text-gray-500 mt-1" data-i18n="home.stat_ws_tools">個 WS 工具</div>
-      </div>
-      <div class="text-center">
-        <div class="text-2xl font-display font-bold gradient-text stat-number">7+</div>
-        <div class="text-xs text-gray-500 mt-1" data-i18n="home.stat_libraries">個套件整合</div>
-      </div>
+<!-- ────────────────────────────────────────────────────────────
+     § 03 — Stack
+──────────────────────────────────────────────────────────────── -->
+<section id="stack" class="mt-20 relative" style="z-index:1;">
+  <div class="section-head">
+    <div class="section-label">§ 03 — STACK</div>
+    <h2 class="font-display font-semibold text-white"
+        style="font-size:clamp(28px,4vw,44px); letter-spacing:-0.02em; margin:0;"
+        data-i18n-new="sections.stack">技術彙整</h2>
+    <p class="mt-2 text-sm" style="color:rgba(255,255,255,0.4);"
+       data-i18n-new="sections.stackSub">這個作品集由以下技術組成。</p>
+  </div>
+
+  <div style="border:1px solid rgba(255,255,255,0.08); border-radius:16px; overflow:hidden;
+              background:rgba(26,26,46,0.55); backdrop-filter:blur(12px);">
+    <div class="stack-row" style="display:grid; grid-template-columns:160px 1fr 20px; gap:20px; padding:16px 22px; align-items:center; font-size:13px; color:white;">
+      <div class="mono" style="font-size:11px; color:rgba(255,255,255,0.28); letter-spacing:1px;">01 · BACKEND</div>
+      <div class="font-medium">Django 5.2 · Python 3.12</div>
+      <div style="width:6px; height:6px; border-radius:50%; background:#C3ABE4; opacity:0.8;"></div>
+    </div>
+    <div class="stack-row" style="display:grid; grid-template-columns:160px 1fr 20px; gap:20px; padding:16px 22px; border-top:1px solid rgba(255,255,255,0.07); align-items:center; font-size:13px; color:white;">
+      <div class="mono" style="font-size:11px; color:rgba(255,255,255,0.28); letter-spacing:1px;">02 · FRONTEND</div>
+      <div class="font-medium">Tailwind CSS · Vanilla JS</div>
+      <div style="width:6px; height:6px; border-radius:50%; background:#C3ABE4; opacity:0.8;"></div>
+    </div>
+    <div class="stack-row" style="display:grid; grid-template-columns:160px 1fr 20px; gap:20px; padding:16px 22px; border-top:1px solid rgba(255,255,255,0.07); align-items:center; font-size:13px; color:white;">
+      <div class="mono" style="font-size:11px; color:rgba(255,255,255,0.28); letter-spacing:1px;">03 · DATABASE</div>
+      <div class="font-medium">SQLite</div>
+      <div style="width:6px; height:6px; border-radius:50%; background:#C3ABE4; opacity:0.8;"></div>
+    </div>
+    <div class="stack-row" style="display:grid; grid-template-columns:160px 1fr 20px; gap:20px; padding:16px 22px; border-top:1px solid rgba(255,255,255,0.07); align-items:center; font-size:13px; color:white;">
+      <div class="mono" style="font-size:11px; color:rgba(255,255,255,0.28); letter-spacing:1px;">04 · LLM</div>
+      <div class="font-medium">Ollama · Qwen 2.5 72B</div>
+      <div style="width:6px; height:6px; border-radius:50%; background:#C3ABE4; opacity:0.8;"></div>
+    </div>
+    <div class="stack-row" style="display:grid; grid-template-columns:160px 1fr 20px; gap:20px; padding:16px 22px; border-top:1px solid rgba(255,255,255,0.07); align-items:center; font-size:13px; color:white;">
+      <div class="mono" style="font-size:11px; color:rgba(255,255,255,0.28); letter-spacing:1px;">05 · SCRAPING</div>
+      <div class="font-medium">Selenium · BeautifulSoup4</div>
+      <div style="width:6px; height:6px; border-radius:50%; background:#C3ABE4; opacity:0.8;"></div>
+    </div>
+    <div class="stack-row" style="display:grid; grid-template-columns:160px 1fr 20px; gap:20px; padding:16px 22px; border-top:1px solid rgba(255,255,255,0.07); align-items:center; font-size:13px; color:white;">
+      <div class="mono" style="font-size:11px; color:rgba(255,255,255,0.28); letter-spacing:1px;">06 · CHARTS</div>
+      <div class="font-medium">Chart.js · Canvas API</div>
+      <div style="width:6px; height:6px; border-radius:50%; background:#C3ABE4; opacity:0.8;"></div>
+    </div>
+    <div class="stack-row" style="display:grid; grid-template-columns:160px 1fr 20px; gap:20px; padding:16px 22px; border-top:1px solid rgba(255,255,255,0.07); align-items:center; font-size:13px; color:white;">
+      <div class="mono" style="font-size:11px; color:rgba(255,255,255,0.28); letter-spacing:1px;">07 · DEPLOY</div>
+      <div class="font-medium">Self-hosted · Tailscale</div>
+      <div style="width:6px; height:6px; border-radius:50%; background:#C3ABE4; opacity:0.8;"></div>
+    </div>
+    <div class="stack-row" style="display:grid; grid-template-columns:160px 1fr 20px; gap:20px; padding:16px 22px; border-top:1px solid rgba(255,255,255,0.07); align-items:center; font-size:13px; color:white;">
+      <div class="mono" style="font-size:11px; color:rgba(255,255,255,0.28); letter-spacing:1px;">08 · TIMEZONE</div>
+      <div class="font-medium">Asia/Taipei (UTC+8)</div>
+      <div style="width:6px; height:6px; border-radius:50%; background:#C3ABE4; opacity:0.8;"></div>
     </div>
   </div>
 </section>
 
-<!-- Section Title: Projects -->
-<div class="flex items-center gap-4 mb-8">
-  <h2 class="text-2xl font-display font-bold text-white" data-i18n="home.projects_title">專案模組</h2>
-  <div class="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent"></div>
-</div>
-
-<!-- Module Cards -->
-<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-
-  <!-- Card: Tournament Pie -->
-  <a href="{% url 'tournament_pie:editor' %}"
-    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
-    <div class="flex items-center gap-4 mb-4">
-      <div class="w-12 h-12 rounded-xl bg-cyrene-blue/15 flex items-center justify-center">
-        <i class="fas fa-trophy text-xl text-cyrene-blue"></i>
-      </div>
-      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-blue transition-colors"
-        data-i18n="home.tournament_pie_title">比賽殺招連動餅圖</h3>
-    </div>
-    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.tournament_pie_desc">
-      輸入貓罐子牌組網址，自動解析所有殺招連動並生成互動式圓餅圖。支援卡圖拖移縮放、背景換圖、系列統計表，可匯出 PNG。
-    </p>
-    <div class="flex flex-wrap gap-1.5 mt-4">
-      <span class="tech-tag">Konva.js</span>
-      <span class="tech-tag">Bottleneko API</span>
-      <span class="tech-tag">Canvas</span>
-    </div>
-    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
-      <span data-i18n="home.explore">探索</span>
-      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
-    </div>
-  </a>
-
-  <!-- Card: Deck Statistics -->
-  <a href="{% url 'pie_chart:dashboard' %}"
-    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
-    <div class="flex items-center gap-4 mb-4">
-      <div class="w-12 h-12 rounded-xl bg-cyrene-pink/15 flex items-center justify-center">
-        <i class="fas fa-chart-pie text-xl text-cyrene-pink"></i>
-      </div>
-      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-pink transition-colors"
-        data-i18n="home.deck_stats_title">牌組統計</h3>
-    </div>
-    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.deck_stats_desc">
-      分析卡牌遊戲比賽的牌組分佈。輸入牌組代碼，生成精美的系列佔比圓餅圖。
-    </p>
-    <div class="flex flex-wrap gap-1.5 mt-4">
-      <span class="tech-tag">Selenium</span>
-      <span class="tech-tag">Matplotlib</span>
-      <span class="tech-tag">NumPy</span>
-    </div>
-    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
-      <span data-i18n="home.explore">探索</span>
-      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
-    </div>
-  </a>
-
-  <!-- Card: Deck Showcase -->
-  <a href="{% url 'deck_showcase:showcase' %}"
-    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
-    <div class="flex items-center gap-4 mb-4">
-      <div class="w-12 h-12 rounded-xl bg-cyrene-blue/15 flex items-center justify-center">
-        <i class="fas fa-image text-xl text-cyrene-blue"></i>
-      </div>
-      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-blue transition-colors"
-        data-i18n="home.deck_showcase_title">牌組展示圖</h3>
-    </div>
-    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.deck_showcase_desc">
-      選擇想展示的卡牌，自訂背景與排列，生成精美的扇形展示圖。支援多種來源與玩家資訊。
-    </p>
-    <div class="flex flex-wrap gap-1.5 mt-4">
-      <span class="tech-tag">Pillow</span>
-      <span class="tech-tag">Requests</span>
-      <span class="tech-tag">Canvas</span>
-    </div>
-    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
-      <span data-i18n="home.explore">探索</span>
-      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
-    </div>
-  </a>
-
-  <!-- Card: Deck AI Analysis -->
-  <a href="{% url 'deck_analysis:index' %}"
-    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
-    <div class="flex items-center gap-4 mb-4">
-      <div class="w-12 h-12 rounded-xl bg-cyrene-pink/15 flex items-center justify-center">
-        <i class="fas fa-brain text-xl text-cyrene-pink"></i>
-      </div>
-      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-pink transition-colors"
-        data-i18n="home.deck_ai_title">牌組 AI 分析</h3>
-    </div>
-    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.deck_ai_desc">
-      輸入 decklog 牌組代碼，AI 自動爬取卡牌清單並進行 Weiß Schwarz 策略分析。
-    </p>
-    <div class="flex flex-wrap gap-1.5 mt-4">
-      <span class="tech-tag">Ollama LLM</span>
-      <span class="tech-tag">Requests</span>
-      <span class="tech-tag">Qwen 2.5</span>
-    </div>
-    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
-      <span data-i18n="home.explore">探索</span>
-      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
-    </div>
-  </a>
-
-  <!-- Card: Journal -->
-  <a href="{% url 'journal:list' %}"
-    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
-    <div class="flex items-center gap-4 mb-4">
-      <div class="w-12 h-12 rounded-xl bg-cyrene-lavender/15 flex items-center justify-center">
-        <i class="fas fa-book-open text-xl text-cyrene-lavender"></i>
-      </div>
-      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-lavender transition-colors"
-        data-i18n="home.journal_title">日誌</h3>
-    </div>
-    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.journal_desc">
-      個人日誌與筆記。在時間牆上記錄想法、靈感與每日感想。
-    </p>
-    <div class="flex flex-wrap gap-1.5 mt-4">
-      <span class="tech-tag">Django ORM</span>
-      <span class="tech-tag">Auth</span>
-      <span class="tech-tag">CRUD</span>
-    </div>
-    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
-      <span data-i18n="home.explore">探索</span>
-      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
-    </div>
-  </a>
-
-  <!-- Card: Color Palette -->
-  <a href="{% url 'color_palette:index' %}"
-    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
-    <div class="flex items-center gap-4 mb-4">
-      <div class="w-12 h-12 rounded-xl bg-cyrene-blue/15 flex items-center justify-center">
-        <i class="fas fa-palette text-xl text-cyrene-blue"></i>
-      </div>
-      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-blue transition-colors"
-        data-i18n="home.color_palette_title">調色盤生成器</h3>
-    </div>
-    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.color_palette_desc">
-      選擇一個基礎色，自動生成互補色、類比色、三色組等多種配色方案。點擊色卡即可複製色碼。
-    </p>
-    <div class="flex flex-wrap gap-1.5 mt-4">
-      <span class="tech-tag">HSL 色彩</span>
-      <span class="tech-tag">JavaScript</span>
-      <span class="tech-tag">Clipboard API</span>
-    </div>
-    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
-      <span data-i18n="home.explore">探索</span>
-      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
-    </div>
-  </a>
-
-  <!-- Card: Pomodoro Timer -->
-  <a href="{% url 'pomodoro:index' %}"
-    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
-    <div class="flex items-center gap-4 mb-4">
-      <div class="w-12 h-12 rounded-xl bg-cyrene-lavender/15 flex items-center justify-center">
-        <i class="fas fa-clock text-xl text-cyrene-lavender"></i>
-      </div>
-      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-lavender transition-colors"
-        data-i18n="home.pomodoro_title">番茄鐘計時器</h3>
-    </div>
-    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.pomodoro_desc">
-      25/5 分鐘番茄工作法計時器。自訂時長、音效提醒、專注次數統計，助你高效專注。
-    </p>
-    <div class="flex flex-wrap gap-1.5 mt-4">
-      <span class="tech-tag">Web Audio</span>
-      <span class="tech-tag">LocalStorage</span>
-      <span class="tech-tag">Timer API</span>
-    </div>
-    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
-      <span data-i18n="home.explore">探索</span>
-      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
-    </div>
-  </a>
-
-  <!-- Card: Finance Brief -->
-  <a href="{% url 'finance_brief:dashboard' %}"
-    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
-    <div class="flex items-center gap-4 mb-4">
-      <div class="w-12 h-12 rounded-xl bg-cyrene-pink/15 flex items-center justify-center">
-        <i class="fas fa-newspaper text-xl text-cyrene-pink"></i>
-      </div>
-      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-pink transition-colors"
-          data-i18n="home.finance_brief_title">
-        今日金融快報
-      </h3>
-    </div>
-    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.finance_brief_desc">
-      每日自動聚合股票指數、外匯、大宗商品與財經新聞，由 AI 生成繁體中文市場總覽。
-    </p>
-    <div class="flex flex-wrap gap-1.5 mt-4">
-      <span class="tech-tag">yfinance</span>
-      <span class="tech-tag">Ollama LLM</span>
-      <span class="tech-tag">RSS</span>
-    </div>
-    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
-      <span data-i18n="home.explore">探索</span>
-      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
-    </div>
-  </a>
-
-  <!-- Card: Stock Market -->
-  <a href="{% url 'stock_market:dashboard' %}"
-    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
-    <div class="flex items-center gap-4 mb-4">
-      <div class="w-12 h-12 rounded-xl bg-cyrene-blue/15 flex items-center justify-center">
-        <i class="fas fa-chart-line text-xl text-cyrene-blue"></i>
-      </div>
-      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-blue transition-colors"
-        data-i18n="home.stock_title">股市指數儀表板</h3>
-    </div>
-    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.stock_desc">
-      即時追蹤美股與台股主要指數。查看 S&P 500、NASDAQ、道璩、台灣加權、費半等趨勢圖與漲跌幅。
-    </p>
-    <div class="flex flex-wrap gap-1.5 mt-4">
-      <span class="tech-tag">yfinance</span>
-      <span class="tech-tag">Canvas API</span>
-      <span class="tech-tag">REST API</span>
-    </div>
-    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
-      <span data-i18n="home.explore">探索</span>
-      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
-    </div>
-  </a>
-
-  <!-- Card: WS Damage Simulator -->
-  <a href="{% url 'ws_damage_sim:index' %}"
-    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
-    <div class="flex items-center gap-4 mb-4">
-      <div class="w-12 h-12 rounded-xl bg-cyrene-pink/15 flex items-center justify-center">
-        <i class="fas fa-dice text-xl text-cyrene-pink"></i>
-      </div>
-      <h3 class="text-xl font-display font-semibold text-white group-hover:text-cyrene-pink transition-colors"
-        data-i18n="home.damage_sim_title">WS 殺招模擬器</h3>
-    </div>
-    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.damage_sim_desc">
-      拖拉積木組合 Weiß Schwarz 殺招，蒙特卡羅模擬計算致命率，支援存檔殺招與 PNG/CSV 匯出。
-    </p>
-    <div class="flex flex-wrap gap-1.5 mt-4">
-      <span class="tech-tag">Monte Carlo</span>
-      <span class="tech-tag">Django ORM</span>
-      <span class="tech-tag">Canvas API</span>
-    </div>
-    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
-      <span data-i18n="home.explore">探索</span>
-      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
-    </div>
-  </a>
-
-  <!-- Card: WsToDiscord Bot -->
-  <a href="{% url 'ws_to_discord:index' %}"
-    class="card-enter card-glow glass p-8 rounded-2xl group block transition-all duration-300">
-    <div class="flex items-center gap-4 mb-4">
-      <div class="w-12 h-12 rounded-xl flex items-center justify-center"
-        style="background: rgba(88,101,242,0.15); border: 1px solid rgba(88,101,242,0.25);">
-        <i class="fab fa-discord text-xl" style="color: #5865F2;"></i>
-      </div>
-      <h3 class="text-xl font-display font-semibold text-white transition-colors"
-        style="transition: color 0.2s;"
-        onmouseover="this.style.color='#5865F2'" onmouseout="this.style.color=''"
-        data-i18n="home.wstodiscord_title">WsToDiscord Bot</h3>
-    </div>
-    <p class="text-gray-400 text-sm leading-relaxed" data-i18n="home.wstodiscord_desc">
-      自動監控日本 WS 卡牌店庫存，每 30 分鐘偵測新品、價格與售完事件，透過 Discord Rich Embeds 即時推播，支援 Slash Commands 查詢。
-    </p>
-    <div class="flex flex-wrap gap-1.5 mt-4">
-      <span class="tech-tag">discord.py</span>
-      <span class="tech-tag">BeautifulSoup4</span>
-      <span class="tech-tag">GCP</span>
-    </div>
-    <div class="mt-5 flex items-center text-xs text-cyrene-blue/70 group-hover:text-cyrene-blue transition-colors">
-      <span data-i18n="home.explore">探索</span>
-      <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
-    </div>
-  </a>
-
-</section>
-
-<!-- Tech Stack Section -->
-<section class="mb-16">
-  <div class="flex items-center gap-4 mb-8">
-    <h2 class="text-2xl font-display font-bold text-white" data-i18n="home.tech_stack_title">技術堆疊</h2>
-    <div class="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent"></div>
+<!-- ────────────────────────────────────────────────────────────
+     § 04 — Contact
+──────────────────────────────────────────────────────────────── -->
+<section id="contact" class="mt-20 mb-8 relative" style="z-index:1;">
+  <div class="section-head">
+    <div class="section-label">§ 04 — CONTACT</div>
+    <h2 class="font-display font-semibold text-white"
+        style="font-size:clamp(28px,4vw,44px); letter-spacing:-0.02em; margin:0;"
+        data-i18n-new="sections.contact">合作或聯絡</h2>
+    <p class="mt-2 text-sm" style="color:rgba(255,255,255,0.4);"
+       data-i18n-new="sections.contactSub">歡迎討論專案、合作、或只是打個招呼。</p>
   </div>
 
-  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-    <!-- Python -->
-    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
-      <i class="fab fa-python text-3xl text-[#3776AB]"></i>
-      <span class="text-xs text-gray-400 font-medium">Python</span>
+  <div style="display:grid; grid-template-columns:1fr auto; gap:24px; align-items:center;
+              padding:28px; border:1px solid rgba(255,255,255,0.08);
+              background:rgba(26,26,46,0.55); border-radius:16px;
+              backdrop-filter:blur(12px);"
+       class="flex-wrap-contact">
+    <div>
+      <div class="font-display font-medium text-white"
+           style="font-size:clamp(20px,3vw,30px); letter-spacing:-0.01em;">
+        911208garykid@gmail.com
+      </div>
+      <div class="text-sm mt-1" style="color:rgba(255,255,255,0.4);"
+           data-i18n-new="contact.reply">通常 24 小時內回覆 · 時區 UTC+8</div>
     </div>
-    <!-- Django -->
-    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
-      <i class="fas fa-leaf text-3xl text-[#092E20]" style="color:#44B78B"></i>
-      <span class="text-xs text-gray-400 font-medium">Django</span>
-    </div>
-    <!-- JavaScript -->
-    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
-      <i class="fab fa-js-square text-3xl text-[#F7DF1E]"></i>
-      <span class="text-xs text-gray-400 font-medium">JavaScript</span>
-    </div>
-    <!-- Tailwind -->
-    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
-      <i class="fas fa-wind text-3xl text-[#38BDF8]"></i>
-      <span class="text-xs text-gray-400 font-medium">Tailwind CSS</span>
-    </div>
-    <!-- Selenium -->
-    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
-      <i class="fas fa-spider text-3xl text-[#43B02A]"></i>
-      <span class="text-xs text-gray-400 font-medium">Selenium</span>
-    </div>
-    <!-- SQLite -->
-    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
-      <i class="fas fa-database text-3xl text-[#4A90D9]"></i>
-      <span class="text-xs text-gray-400 font-medium">SQLite</span>
-    </div>
-    <!-- Matplotlib -->
-    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
-      <i class="fas fa-chart-area text-3xl text-[#11557C]" style="color:#E07C3E"></i>
-      <span class="text-xs text-gray-400 font-medium">Matplotlib</span>
-    </div>
-    <!-- Pillow -->
-    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
-      <i class="fas fa-images text-3xl text-[#8CAAE6]"></i>
-      <span class="text-xs text-gray-400 font-medium">Pillow</span>
-    </div>
-    <!-- Ollama -->
-    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
-      <i class="fas fa-robot text-3xl text-cyrene-lavender"></i>
-      <span class="text-xs text-gray-400 font-medium">Ollama</span>
-    </div>
-    <!-- NumPy -->
-    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
-      <i class="fas fa-square-root-variable text-3xl text-[#4DABCF]"></i>
-      <span class="text-xs text-gray-400 font-medium">NumPy</span>
-    </div>
-    <!-- Requests -->
-    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
-      <i class="fas fa-globe text-3xl text-[#DA5B0B]"></i>
-      <span class="text-xs text-gray-400 font-medium">Requests</span>
-    </div>
-    <!-- Git -->
-    <div class="tech-icon-hover glass rounded-xl p-5 flex flex-col items-center gap-3 text-center">
-      <i class="fab fa-git-alt text-3xl text-[#F05032]"></i>
-      <span class="text-xs text-gray-400 font-medium">Git</span>
-    </div>
+    <button id="copy-email-btn" class="copy-btn">
+      <span id="copy-label" data-i18n-new="misc.copyEmail">複製信箱</span>
+      <span aria-hidden>⧉</span>
+    </button>
   </div>
 </section>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  // Typing animation - language aware
-  const phrasesMap = {
-    zh: ['歡迎來到sakanasa的工坊', '牌組統計分析', '牌組展示圖', '牌組AI分析', 'WS殺招模擬器', '心情日誌', '調色盤生成器', '番茄鐘計時器', '股市儀表板', '更多即將推出...'],
-    en: ['Welcome to Sakanasa Workshop', 'Deck Statistics', 'Deck Showcase', 'Deck AI Analysis', 'Damage Simulator', 'Journal', 'Color Palette', 'Pomodoro Timer', 'Stock Market', 'More Coming Soon...']
+// ── Extend i18n with new home-page keys ──────────────────────────────────
+(function() {
+  const newKeys = {
+    zh: {
+      'hero.available': '就學中',
+      'hero.role1': '全端開發者', 'hero.role2': '座標-高雄、台南',
+      'hero.bio': '熱愛用程式碼解決問題。專注於 Django、資料抓取、LLM 整合，以及奇怪小工具的製作。',
+      'hero.cta1': '查看作品', 'hero.cta2': '技術彙整',
+      'sections.work': '精選作品', 'sections.workSub': '十一個由 Django 驅動的小型工具與實驗。',
+      'sections.skills': '能力指標', 'sections.skillsSub': '自評 — 日常在用的技術比例。',
+      'sections.stack': '技術彙整', 'sections.stackSub': '這個作品集由以下技術組成。',
+      'sections.contact': '合作或聯絡', 'sections.contactSub': '歡迎討論專案、合作、或只是打個招呼。',
+      'contact.reply': '通常 24 小時內回覆 · 時區 UTC+8',
+      'misc.copyEmail': '複製信箱', 'misc.copied': '已複製 ✓',
+      'meta.status': '現況',
+      'badge.visual': '視覺化', 'badge.ai': 'AI', 'badge.deck': '牌組',
+      'badge.sim': '模擬', 'badge.brief': '快報', 'badge.market': '行情',
+      'badge.log': '記錄', 'badge.tool': '工具', 'badge.integration': '整合',
+    },
+    en: {
+      'hero.available': 'Currently studying',
+      'hero.role1': 'Full-stack developer', 'hero.role2': 'based in southern Taiwan',
+      'hero.bio': 'I love solving problems with code — Django backends, scrapers, LLM integrations, and all kinds of quirky little tools.',
+      'hero.cta1': 'See work', 'hero.cta2': 'Tech stack',
+      'sections.work': 'Selected work', 'sections.workSub': 'Eleven tools and experiments, all Django-powered.',
+      'sections.skills': 'Capabilities', 'sections.skillsSub': 'A self-assessment of where I spend the most time.',
+      'sections.stack': 'Tech stack', 'sections.stackSub': 'Everything this portfolio is built with.',
+      'sections.contact': 'Get in touch', 'sections.contactSub': 'Open to projects, collaboration, or just a hello.',
+      'contact.reply': 'Usually replies within 24h · UTC+8',
+      'misc.copyEmail': 'Copy email', 'misc.copied': 'Copied ✓',
+      'meta.status': 'STATUS',
+      'badge.visual': 'Visual', 'badge.ai': 'AI', 'badge.deck': 'Deck',
+      'badge.sim': 'Sim', 'badge.brief': 'Brief', 'badge.market': 'Market',
+      'badge.log': 'Log', 'badge.tool': 'Tool', 'badge.integration': 'Integration',
+    },
   };
-  let phraseIndex = 0;
-  let charIndex = 0;
-  let isDeleting = false;
-  const typedEl = document.getElementById('typed-text');
-
-  function getPhrases() {
-    return phrasesMap[getLang()] || phrasesMap.zh;
+  if (typeof I18N !== 'undefined') {
+    Object.assign(I18N.zh, newKeys.zh);
+    Object.assign(I18N.en, newKeys.en);
   }
 
-  function type() {
-    const phrases = getPhrases();
-    const current = phrases[phraseIndex % phrases.length];
-    if (!isDeleting) {
-      typedEl.textContent = current.substring(0, charIndex + 1);
-      charIndex++;
-      if (charIndex === current.length) {
-        isDeleting = true;
-        setTimeout(type, 2000);
-        return;
-      }
-      setTimeout(type, 80);
+  // Apply new keys (data-i18n-new) on load + lang change
+  function applyNew(lang) {
+    var i18n = (typeof I18N !== 'undefined') ? I18N : null;
+    document.querySelectorAll('[data-i18n-new]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n-new');
+      var text = i18n && i18n[lang] && i18n[lang][key];
+      if (text) el.textContent = text;
+    });
+    document.title = lang === 'en' ? 'Sakanasa Workshop' : 'sakanasa工坊';
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    var lang = (typeof getLang === 'function') ? getLang() : 'zh';
+    applyNew(lang);
+  });
+  document.addEventListener('langchange', function(e) { applyNew(e.detail.lang); });
+})();
+
+// ── Responsive hero grid (collapse aside on small screens via grid) ───────
+(function() {
+  var grid = document.getElementById('hero-grid');
+  function checkWidth() {
+    if (window.innerWidth < 768) {
+      grid.style.gridTemplateColumns = 'minmax(0,1fr)';
     } else {
-      typedEl.textContent = current.substring(0, charIndex - 1);
-      charIndex--;
-      if (charIndex === 0) {
-        isDeleting = false;
-        phraseIndex = (phraseIndex + 1) % phrases.length;
-        setTimeout(type, 400);
-        return;
-      }
-      setTimeout(type, 40);
+      grid.style.gridTemplateColumns = 'minmax(0,1fr) 280px';
     }
   }
-  type();
+  checkWidth();
+  window.addEventListener('resize', checkWidth);
+})();
 
-  // When language changes, reset typing animation
-  document.addEventListener('langchange', function () {
-    isDeleting = true;
-  });
-
-  // Animate skill bars on scroll
-  const observer = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
+// ── Project card IntersectionObserver stagger ─────────────────────────────
+(function() {
+  var cards = document.querySelectorAll('.proj-card');
+  if (!('IntersectionObserver' in window)) {
+    cards.forEach(function(c) { c.style.opacity = '1'; c.style.transform = 'none'; });
+    return;
+  }
+  var io = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
       if (entry.isIntersecting) {
-        entry.target.querySelectorAll('.skill-bar-fill').forEach(function (bar) {
-          bar.style.width = bar.style.width; // trigger reflow
-        });
+        var card = entry.target;
+        var idx = Array.from(cards).indexOf(card);
+        card.style.animationDelay = (idx % 3) * 0.08 + 's';
+        card.classList.add('visible');
+        io.unobserve(card);
       }
     });
-  }, { threshold: 0.2 });
+  }, { threshold: 0.12 });
+  cards.forEach(function(c) { io.observe(c); });
+})();
 
-  document.querySelectorAll('.about-fade-in').forEach(function (el) {
-    observer.observe(el);
+// ── Copy email button ──────────────────────────────────────────────────────
+(function() {
+  var btn = document.getElementById('copy-email-btn');
+  var label = document.getElementById('copy-label');
+  if (!btn) return;
+  btn.addEventListener('click', function() {
+    navigator.clipboard && navigator.clipboard.writeText('911208garykid@gmail.com');
+    var lang = (typeof getLang === 'function') ? getLang() : 'zh';
+    var i18n = (typeof I18N !== 'undefined') ? I18N : null;
+    label.textContent = (i18n && i18n[lang] && i18n[lang]['misc.copied']) || '已複製 ✓';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      label.textContent = (i18n && i18n[lang] && i18n[lang]['misc.copyEmail']) || '複製信箱';
+      btn.classList.remove('copied');
+    }, 1600);
   });
+})();
+
+// ── Silk threads canvas ────────────────────────────────────────────────────
+(function() {
+  var canvas = document.getElementById('silk-canvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var W = 0, H = 0;
+  var threads = [];
+  var mouse = { x: -9999, y: -9999 };
+  var rafId = 0;
+  var CYRENE = ['#F2A7C3', '#A8D8EA', '#C3ABE4'];
+  var COUNT = 16, SEGS = 32;
+
+  function resize() {
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildThreads();
+  }
+
+  function buildThreads() {
+    threads = [];
+    for (var i = 0; i < COUNT; i++) {
+      var baseY = (H / COUNT) * (i + 0.5) + (Math.random() - 0.5) * (H / COUNT) * 0.5;
+      var pts = [];
+      for (var j = 0; j <= SEGS; j++) {
+        pts.push({ x: (W / SEGS) * j, ox: 0, oy: 0, vx: 0, vy: 0 });
+      }
+      threads.push({
+        pts: pts, baseY: baseY,
+        amp: 2 + Math.random() * 5,
+        freq: 0.12 + Math.random() * 0.28,
+        phase: Math.random() * Math.PI * 2,
+        color: CYRENE[i % 3],
+        width: 0.3 + Math.random() * 0.4,
+        alpha: 0.12 + Math.random() * 0.14,
+        skew: (Math.random() - 0.5) * 0.12,
+      });
+    }
+  }
+
+  var RADIUS = 110, PUSH = 0.8;
+
+  function tick(t) {
+    var time = t * 0.001;
+    ctx.clearRect(0, 0, W, H);
+    var mx = mouse.x, my = mouse.y;
+
+    for (var i = 0; i < threads.length; i++) {
+      var th = threads[i];
+      ctx.beginPath();
+      for (var j = 0; j < th.pts.length; j++) {
+        var p = th.pts[j];
+        var baseY = th.baseY + th.skew * p.x;
+        var wave = Math.sin(time * th.freq + j * 0.3 + th.phase) * th.amp;
+        var tx = p.x, ty = baseY + wave;
+
+        var dx = p.x + p.ox - mx, dy = baseY + p.oy - my;
+        var d2 = dx * dx + dy * dy;
+        if (d2 < RADIUS * RADIUS) {
+          var d = Math.sqrt(d2) || 1;
+          var f = (1 - d / RADIUS) * PUSH;
+          p.vx += (dx / d) * f;
+          p.vy += (dy / d) * f;
+        }
+        p.vx += (tx - (p.x + p.ox)) * 0.04;
+        p.vy += (ty - (baseY + p.oy)) * 0.04;
+        p.vx *= 0.86; p.vy *= 0.86;
+        p.ox += p.vx; p.oy += p.vy;
+
+        var drawX = p.x + p.ox, drawY = baseY + p.oy;
+        if (j === 0) ctx.moveTo(drawX, drawY);
+        else ctx.lineTo(drawX, drawY);
+      }
+      ctx.strokeStyle = th.color;
+      ctx.globalAlpha = th.alpha;
+      ctx.lineWidth = th.width;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    rafId = requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('resize', resize);
+  window.addEventListener('pointermove', function(e) {
+    mouse.x = e.clientX; mouse.y = e.clientY;
+  }, { passive: true });
+  window.addEventListener('pointerleave', function() {
+    mouse.x = -9999; mouse.y = -9999;
+  });
+
+  resize();
+  rafId = requestAnimationFrame(tick);
+})();
 </script>
 {% endblock %}

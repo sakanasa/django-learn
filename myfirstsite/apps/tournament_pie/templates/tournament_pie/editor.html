@@ -2,11 +2,13 @@
 {% load static %}
 
 {% block title %}比賽殺招連動餅圖 - Sakanasa's Workshop{% endblock %}
+{# title updated by JS applyNew #}
 
 {% block extra_head %}
 <meta name="csrf-token" content="{{ csrf_token }}">
 <script src="https://unpkg.com/konva@9/konva.min.js"></script>
 <style>
+  /* ── Desktop shared ──────────────────────────────────── */
   #stage-wrapper {
     overflow: hidden;
     border-radius: 12px;
@@ -23,10 +25,11 @@
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.07);
     font-size: 13px; color: #e5e7eb;
+    margin-bottom: 4px;
   }
   .sidebar-card .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   .sidebar-card .count-badge {
-    margin-left: auto;
+    margin-left: auto; flex-shrink: 0;
     background: rgba(242,167,195,0.2); color: #F2A7C3;
     border-radius: 999px; padding: 1px 8px; font-size: 11px; font-weight: 700;
   }
@@ -65,16 +68,176 @@
     text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 8px;
   }
   .hint-text { font-size: 11px; color: rgba(255,255,255,0.25); line-height: 1.6; }
+
+  /* ── Visibility split ────────────────────────────────── */
+  @media (max-width: 767px) { .desktop-only { display: none !important; } }
+  @media (min-width: 768px) { #mobile-shell { display: none !important; } }
+
+  /* ── Mobile shell ────────────────────────────────────── */
+  #mobile-shell {
+    position: fixed; inset: 0; z-index: 999;
+    display: flex; flex-direction: column;
+    background: #12121f; overflow: hidden;
+  }
+
+  /* ── Mobile top bar ──────────────────────────────────── */
+  #mb-topbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: rgba(13,13,26,0.95);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+  }
+  #mb-topbar .mb-url-wrap {
+    flex: 1; display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; padding: 0 12px;
+  }
+  .mb-url-icon { color: rgba(255,255,255,0.25); font-size: 12px; flex-shrink: 0; }
+  #url-input-m {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: #e5e7eb; font-size: 13px; padding: 10px 0;
+  }
+  #url-input-m::placeholder { color: rgba(255,255,255,0.25); }
+  #mb-load-btn {
+    flex-shrink: 0; padding: 9px 16px; border-radius: 10px;
+    background: rgba(242,167,195,0.18); border: 1px solid rgba(242,167,195,0.35);
+    color: #F2A7C3; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s;
+  }
+  #mb-load-btn:hover { background: rgba(242,167,195,0.28); }
+
+  /* ── Mobile canvas ───────────────────────────────────── */
+  #mb-canvas {
+    flex: 1; min-height: 0; position: relative; overflow: hidden; background: #12121f;
+  }
+  #mb-stage-host {
+    position: absolute; inset: 0; overflow: hidden;
+  }
+  /* Stage wrapper inside mobile host: centered at top, scales down */
+  #mb-stage-host #stage-wrapper {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform-origin: center center;
+    border-radius: 0; border: none;
+  }
+
+  /* ── Mobile empty state ──────────────────────────────── */
+  #mb-empty {
+    position: absolute; inset: 0; z-index: 5;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 40px 32px;
+    background: #12121f;
+    transition: opacity 0.3s;
+  }
+  #mb-empty.hidden { opacity: 0; pointer-events: none; }
+
+  /* ── FAB cluster ─────────────────────────────────────── */
+  #mb-fab {
+    position: absolute; right: 14px; top: 14px;
+    display: flex; flex-direction: column; gap: 10px; z-index: 20;
+  }
+  .fab {
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 12px;
+    background: rgba(20,20,40,0.88);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #e5e7eb; font-size: 16px; cursor: pointer;
+    transition: background 0.15s; text-decoration: none;
+  }
+  .fab:hover { background: rgba(255,255,255,0.12); }
+  .fab:disabled { opacity: 0.35; cursor: not-allowed; }
+  label.fab { cursor: pointer; }
+
+  /* ── Bottom sheet ────────────────────────────────────── */
+  #mb-sheet {
+    flex-shrink: 0;
+    background: rgba(14,14,28,0.97);
+    border-top: 1px solid rgba(255,255,255,0.09);
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  #mb-sheet[data-state="collapsed"] { height: 28px; }
+  #mb-sheet[data-state="peek"]      { height: 150px; }
+  #mb-sheet[data-state="full"]      { height: 62vh; }
+
+  #sheet-handle {
+    width: 36px; height: 4px; margin: 12px auto 0;
+    background: rgba(255,255,255,0.2); border-radius: 2px;
+    cursor: pointer; transition: background 0.15s;
+  }
+  #sheet-handle:hover { background: rgba(255,255,255,0.35); }
+
+  /* Peek strip */
+  #sheet-peek-content {
+    display: none; align-items: center; padding: 10px 20px; gap: 12px;
+  }
+  #mb-sheet[data-state="peek"] #sheet-peek-content { display: flex; }
+
+  .sheet-deck-info { flex: 1; min-width: 0; }
+  .sheet-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 2px;
+  }
+  .sheet-title {
+    font-size: 15px; font-weight: 700; color: #fff;
+    margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .sheet-sub { font-size: 12px; color: rgba(242,167,195,0.8); }
+  .sheet-expand {
+    flex-shrink: 0; padding: 8px 14px; border-radius: 8px;
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+    color: #e5e7eb; font-size: 12px; cursor: pointer; white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .sheet-expand:hover { background: rgba(255,255,255,0.12); }
+
+  /* Full sheet */
+  #sheet-full-content {
+    display: none; flex-direction: column;
+    height: calc(100% - 28px); /* 28px = handle+margin */
+  }
+  #mb-sheet[data-state="full"] #sheet-full-content { display: flex; }
+
+  /* Tabs */
+  .tabs {
+    display: flex; border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 0 16px; flex-shrink: 0;
+  }
+  .tab {
+    padding: 12px 14px; font-size: 14px; font-weight: 500;
+    color: rgba(255,255,255,0.4); background: transparent; border: none;
+    cursor: pointer; border-bottom: 2px solid transparent;
+    margin-bottom: -1px; transition: color 0.15s, border-color 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tab.is-active { color: #fff; border-bottom-color: #F2A7C3; }
+  .tab-badge {
+    background: rgba(242,167,195,0.2); color: #F2A7C3;
+    border-radius: 999px; padding: 1px 7px; font-size: 11px; font-weight: 700;
+  }
+
+  .tab-panels { flex: 1; overflow-y: auto; padding: 12px 16px; }
+  .tab-panels::-webkit-scrollbar { width: 4px; }
+  .tab-panels::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+  .tab-panel { display: none; }
+  .tab-panel.is-active { display: block; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen px-4 py-6">
+<!-- ═══ Desktop layout ═══════════════════════════════════════════════════════ -->
+<div class="desktop-only min-h-screen px-4 py-6">
 
   <!-- Page header -->
   <div class="mb-5">
-    <h1 class="text-2xl font-display font-bold text-white">比賽殺招連動餅圖</h1>
-    <p class="text-sm mt-1" style="color:rgba(255,255,255,0.4)">
+    <h1 class="text-2xl font-display font-bold text-white" data-i18n-new="tp.title">比賽殺招連動餅圖</h1>
+    <p class="text-sm mt-1" style="color:rgba(255,255,255,0.4)" data-i18n-new="tp.subtitle">
       輸入貓罐子牌組網址，自動產生殺招連動分佈餅圖。餅圖與統計表皆可自由拖移定位。
     </p>
   </div>
@@ -84,21 +247,21 @@
        style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">
     <input id="url-input" type="text" placeholder="https://bottleneko.app/deck/krK79" />
     <button class="tool-btn primary" onclick="loadDeck()">
-      <i class="fa-solid fa-chart-pie"></i> 載入殺招連動
+      <i class="fa-solid fa-chart-pie"></i> <span data-i18n-new="tp.load_btn">載入殺招連動</span>
     </button>
     <div style="width:1px;height:24px;background:rgba(255,255,255,0.1)"></div>
-    <label class="tool-btn" style="cursor:pointer" title="上傳背景圖">
-      <i class="fa-solid fa-image"></i> 背景圖
+    <label class="tool-btn" style="cursor:pointer" data-i18n-new-title="tp.bg_title">
+      <i class="fa-solid fa-image"></i> <span data-i18n-new="tp.bg_btn">背景圖</span>
       <input type="file" id="bg-upload" accept="image/*" style="display:none" onchange="handleBgUpload(this)">
     </label>
     <button class="tool-btn" id="btn-clear-bg" onclick="clearBg()" style="display:none">
-      <i class="fa-solid fa-xmark"></i> 移除背景
+      <i class="fa-solid fa-xmark"></i> <span data-i18n-new="tp.clear_bg">移除背景</span>
     </button>
-    <button class="tool-btn" onclick="undo()" id="btn-undo" disabled title="上一步 (Ctrl+Z)">
-      <i class="fa-solid fa-rotate-left"></i> 上一步
+    <button class="tool-btn" onclick="undo()" id="btn-undo" disabled data-i18n-new-title="tp.undo_title">
+      <i class="fa-solid fa-rotate-left"></i> <span data-i18n-new="tp.undo">上一步</span>
     </button>
-    <button class="tool-btn accent" onclick="exportPng()" id="btn-export" disabled title="匯出 PNG">
-      <i class="fa-solid fa-download"></i> 匯出 PNG
+    <button class="tool-btn accent" onclick="exportPng()" id="btn-export" disabled data-i18n-new-title="tp.export_title">
+      <i class="fa-solid fa-download"></i> <span data-i18n-new="tp.export">匯出 PNG</span>
     </button>
   </div>
 
@@ -108,42 +271,42 @@
     <!-- Sidebar -->
     <div class="flex-shrink-0 flex flex-col gap-4" style="width:250px">
 
-      <div class="p-4 rounded-xl" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">
-        <div class="section-title">殺招連動清單</div>
+      <div id="dt-plays-card" class="p-4 rounded-xl" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">
+        <div class="section-title" data-i18n-new="tp.plays_title">殺招連動清單</div>
         <div id="plays-list">
-          <p class="hint-text">載入牌組後顯示</p>
+          <p class="hint-text" data-i18n-new="tp.plays_empty">載入牌組後顯示</p>
         </div>
       </div>
 
-      <div class="p-4 rounded-xl" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">
-        <div class="section-title">系列統計</div>
+      <div id="dt-series-card" class="p-4 rounded-xl" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">
+        <div class="section-title" data-i18n-new="tp.series_title">系列統計</div>
         <div id="series-list">
-          <p class="hint-text">系列分佈統計</p>
+          <p class="hint-text" data-i18n-new="tp.series_empty">系列分佈統計</p>
         </div>
       </div>
 
       <div class="p-4 rounded-xl" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">
-        <div class="section-title">操作說明</div>
+        <div class="section-title" data-i18n-new="tp.help_title">操作說明</div>
         <ul class="hint-text" style="list-style:disc;padding-left:14px">
-          <li>拖移扇形空白區域 → 移動整個餅圖</li>
-          <li>↕ 把手（12點鐘位置）→ 上下拖移調整餅圖大小</li>
-          <li>點擊切片內卡圖 → 顯示調整把手</li>
-          <li>8 個把手可拉伸 / 縮放 / 旋轉卡圖</li>
-          <li>系列統計表可拖移到任意位置</li>
-          <li>點擊畫布空白處取消選取</li>
+          <li data-i18n-new="tp.help1">拖移扇形空白區域 → 移動整個餅圖</li>
+          <li data-i18n-new="tp.help2">↕ 把手（12點鐘位置）→ 上下拖移調整餅圖大小</li>
+          <li data-i18n-new="tp.help3">點擊切片內卡圖 → 顯示調整把手</li>
+          <li data-i18n-new="tp.help4">8 個把手可拉伸 / 縮放 / 旋轉卡圖</li>
+          <li data-i18n-new="tp.help5">系列統計表可拖移到任意位置</li>
+          <li data-i18n-new="tp.help6">點擊畫布空白處取消選取</li>
         </ul>
       </div>
     </div>
 
     <!-- Canvas area -->
-    <div class="flex-1 flex flex-col items-start" style="min-width:0">
+    <div id="desktop-canvas-host" class="flex-1 flex flex-col items-start" style="min-width:0">
       <div id="stage-wrapper">
         <div id="stage-container"></div>
         <div id="loading-overlay">
           <div class="text-center">
             <div class="w-10 h-10 rounded-full border-2 mx-auto mb-3 animate-spin"
                  style="border-color:rgba(242,167,195,0.3);border-top-color:#F2A7C3"></div>
-            <p style="color:#F2A7C3;font-size:13px">載入殺招連動中…</p>
+            <p style="color:#F2A7C3;font-size:13px" data-i18n-new="tp.loading">載入殺招連動中…</p>
           </div>
         </div>
       </div>
@@ -152,18 +315,232 @@
 
   </div>
 </div>
+
+<!-- ═══ Mobile shell (≤767px) ═══════════════════════════════════════════════ -->
+<div id="mobile-shell">
+
+  <!-- Top bar -->
+  <header id="mb-topbar">
+    <div class="mb-url-wrap">
+      <i class="fa-solid fa-link mb-url-icon"></i>
+      <input id="url-input-m" type="text" placeholder="貓罐子網址…"
+             data-i18n-placeholder="tp.mb_placeholder"
+             onkeydown="if(event.key==='Enter')loadDeckMobile()">
+    </div>
+    <button id="mb-load-btn" onclick="loadDeckMobile()" data-i18n-new="tp.mb_load">載入</button>
+  </header>
+
+  <!-- Canvas area -->
+  <main id="mb-canvas">
+    <!-- #stage-wrapper gets moved here by syncStageHost() on mobile -->
+    <div id="mb-stage-host"></div>
+
+    <!-- Empty state -->
+    <div id="mb-empty">
+      <svg width="80" height="80" viewBox="0 0 80 80" fill="none"
+           xmlns="http://www.w3.org/2000/svg" style="margin-bottom:24px;opacity:0.5">
+        <circle cx="40" cy="40" r="36" stroke="#A8D8EA" stroke-width="1.5" fill="none"/>
+        <line x1="40" y1="18" x2="40" y2="62" stroke="#A8D8EA" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="18" y1="40" x2="62" y2="40" stroke="#A8D8EA" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <h2 style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px" data-i18n-new="tp.mb_empty_title">貼上牌組網址開始</h2>
+      <p style="color:rgba(255,255,255,0.4);font-size:14px;line-height:1.7" data-i18n-new="tp.mb_empty_desc">
+        從貓罐子複製你的牌組連結，我們會幫你畫出殺招連動餅圖
+      </p>
+    </div>
+
+    <!-- FAB cluster -->
+    <div id="mb-fab">
+      <label class="fab" for="bg-upload" data-i18n-new-title="tp.bg_title">
+        <i class="fa-solid fa-image"></i>
+      </label>
+      <button class="fab" id="fab-undo" onclick="undo()" disabled data-i18n-new-title="tp.undo_title">
+        <i class="fa-solid fa-rotate-left"></i>
+      </button>
+      <button class="fab" id="fab-export" onclick="exportPng()" disabled data-i18n-new-title="tp.export_title">
+        <i class="fa-solid fa-download"></i>
+      </button>
+    </div>
+  </main>
+
+  <!-- Bottom sheet -->
+  <aside id="mb-sheet" data-state="peek">
+    <div id="sheet-handle"></div>
+
+    <!-- Peek strip -->
+    <div id="sheet-peek-content">
+      <div class="sheet-deck-info">
+        <div class="sheet-label" data-i18n-new="tp.mb_deck_label">牌組</div>
+        <div class="sheet-title" id="mb-deck-title">—</div>
+        <div class="sheet-sub" id="mb-deck-sub" data-i18n-new="tp.mb_unsub">尚未載入</div>
+      </div>
+      <button class="sheet-expand" onclick="setSheetState('full')" data-i18n-new="tp.mb_expand">詳細 ↑</button>
+    </div>
+
+    <!-- Full content (tabs) -->
+    <div id="sheet-full-content">
+      <div class="tabs">
+        <button class="tab is-active" data-tab="plays">
+          <span data-i18n-new="tp.tab_plays">殺招</span> <span class="tab-badge" id="plays-count">0</span>
+        </button>
+        <button class="tab" data-tab="series" data-i18n-new="tp.tab_series">系列</button>
+        <button class="tab" data-tab="help" data-i18n-new="tp.tab_help">說明</button>
+      </div>
+      <div class="tab-panels">
+        <div class="tab-panel is-active" id="tab-plays">
+          <!-- #plays-list moved here on mobile -->
+        </div>
+        <div class="tab-panel" id="tab-series">
+          <!-- #series-list moved here on mobile -->
+        </div>
+        <div class="tab-panel" id="tab-help">
+          <ul class="hint-text" style="padding-left:14px;list-style:disc;margin-top:4px">
+            <li data-i18n-new="tp.help1">拖移扇形空白區域 → 移動整個餅圖</li>
+            <li data-i18n-new="tp.help2">↕ 把手（12點鐘位置）→ 上下拖移調整大小</li>
+            <li data-i18n-new="tp.help3">點擊切片內卡圖 → 顯示調整把手</li>
+            <li data-i18n-new="tp.help4">8 個把手可拉伸 / 縮放 / 旋轉卡圖</li>
+            <li data-i18n-new="tp.help5">系列統計表可拖移到任意位置</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+</div><!-- /mobile-shell -->
 {% endblock %}
 
 {% block extra_js %}
 <script>
+// ─── i18n extension ──────────────────────────────────────────────────────────
+(function() {
+  const tpKeys = {
+    zh: {
+      'tp.title':           '比賽殺招連動餅圖',
+      'tp.subtitle':        '輸入貓罐子牌組網址，自動產生殺招連動分佈餅圖。餅圖與統計表皆可自由拖移定位。',
+      'tp.load_btn':        '載入殺招連動',
+      'tp.bg_btn':          '背景圖',
+      'tp.bg_title':        '上傳背景圖',
+      'tp.clear_bg':        '移除背景',
+      'tp.undo':            '上一步',
+      'tp.undo_title':      '上一步 (Ctrl+Z)',
+      'tp.export':          '匯出 PNG',
+      'tp.export_title':    '匯出 PNG',
+      'tp.plays_title':     '殺招連動清單',
+      'tp.plays_empty':     '載入牌組後顯示',
+      'tp.series_title':    '系列統計',
+      'tp.series_empty':    '系列分佈統計',
+      'tp.help_title':      '操作說明',
+      'tp.help1':           '拖移扇形空白區域 → 移動整個餅圖',
+      'tp.help2':           '↕ 把手（12點鐘位置）→ 上下拖移調整餅圖大小',
+      'tp.help3':           '點擊切片內卡圖 → 顯示調整把手',
+      'tp.help4':           '8 個把手可拉伸 / 縮放 / 旋轉卡圖',
+      'tp.help5':           '系列統計表可拖移到任意位置',
+      'tp.help6':           '點擊畫布空白處取消選取',
+      'tp.loading':         '載入殺招連動中…',
+      'tp.err_prefix':      '錯誤：',
+      'tp.err_load':        '無法載入牌組',
+      'tp.err_net':         '網路錯誤：',
+      'tp.deck_info':       '種殺招連動，合計',
+      'tp.deck_info2':      '位玩家',
+      'tp.canvas_series':   '系列統計',
+      'tp.mb_placeholder':  '貓罐子網址…',
+      'tp.mb_load':         '載入',
+      'tp.mb_empty_title':  '貼上牌組網址開始',
+      'tp.mb_empty_desc':   '從貓罐子複製你的牌組連結，我們會幫你畫出殺招連動餅圖',
+      'tp.mb_deck_label':   '牌組',
+      'tp.mb_unsub':        '尚未載入',
+      'tp.mb_expand':       '詳細 ↑',
+      'tp.tab_plays':       '殺招',
+      'tp.tab_series':      '系列',
+      'tp.tab_help':        '說明',
+      'tp.mb_sub':          '種殺招・合計',
+      'tp.mb_sub2':         '人',
+    },
+    en: {
+      'tp.title':           'Tournament Finisher Pie',
+      'tp.subtitle':        'Enter a Bottleneko deck URL to auto-generate a finisher combo pie chart. Both the chart and stats table are freely draggable.',
+      'tp.load_btn':        'Load Finishers',
+      'tp.bg_btn':          'Background',
+      'tp.bg_title':        'Upload Background Image',
+      'tp.clear_bg':        'Remove BG',
+      'tp.undo':            'Undo',
+      'tp.undo_title':      'Undo (Ctrl+Z)',
+      'tp.export':          'Export PNG',
+      'tp.export_title':    'Export PNG',
+      'tp.plays_title':     'Finisher Combos',
+      'tp.plays_empty':     'Load a deck to display',
+      'tp.series_title':    'Series Stats',
+      'tp.series_empty':    'Series distribution',
+      'tp.help_title':      'How to Use',
+      'tp.help1':           'Drag blank area of a slice → move the whole pie',
+      'tp.help2':           "↕ handle (12 o'clock) → drag up/down to resize the pie",
+      'tp.help3':           'Click a card image in a slice → show transform handles',
+      'tp.help4':           '8 handles to stretch / scale / rotate the card image',
+      'tp.help5':           'The series stats table is also freely draggable',
+      'tp.help6':           'Click blank canvas area to deselect',
+      'tp.loading':         'Loading finishers…',
+      'tp.err_prefix':      'Error: ',
+      'tp.err_load':        'Failed to load deck',
+      'tp.err_net':         'Network error: ',
+      'tp.deck_info':       'finisher combos, total',
+      'tp.deck_info2':      'players',
+      'tp.canvas_series':   'Series Stats',
+      'tp.mb_placeholder':  'Bottleneko URL…',
+      'tp.mb_load':         'Load',
+      'tp.mb_empty_title':  'Paste a deck URL to start',
+      'tp.mb_empty_desc':   "Copy your deck link from Bottleneko — we'll draw your finisher pie chart",
+      'tp.mb_deck_label':   'Deck',
+      'tp.mb_unsub':        'Not loaded',
+      'tp.mb_expand':       'Details ↑',
+      'tp.tab_plays':       'Finishers',
+      'tp.tab_series':      'Series',
+      'tp.tab_help':        'Help',
+      'tp.mb_sub':          'combos · total',
+      'tp.mb_sub2':         'players',
+    },
+  };
+
+  if (typeof I18N !== 'undefined') {
+    Object.assign(I18N.zh, tpKeys.zh);
+    Object.assign(I18N.en, tpKeys.en);
+  }
+
+  function applyNew(lang) {
+    var i18n = (typeof I18N !== 'undefined') ? I18N : null;
+    document.querySelectorAll('[data-i18n-new]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n-new');
+      var text = i18n && i18n[lang] && i18n[lang][key];
+      if (text) el.textContent = text;
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n-placeholder');
+      var text = i18n && i18n[lang] && i18n[lang][key];
+      if (text) el.placeholder = text;
+    });
+    document.querySelectorAll('[data-i18n-new-title]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n-new-title');
+      var text = i18n && i18n[lang] && i18n[lang][key];
+      if (text) el.title = text;
+    });
+    document.title = lang === 'en'
+      ? 'Tournament Finisher Pie - Sakanasa\'s Workshop'
+      : '比賽殺招連動餅圖 - Sakanasa\'s Workshop';
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var lang = (typeof getLang === 'function') ? getLang() : 'zh';
+    applyNew(lang);
+  });
+  document.addEventListener('langchange', function(e) { applyNew(e.detail.lang); });
+})();
+
 // ─── Config ──────────────────────────────────────────────────────────────────
 const STAGE_W = 900;
 const STAGE_H = 900;
 const CX      = 450;   // pie center
 const CY      = 450;
-const PIE_R   = 255;   // pie radius (70% of original 365)
+const PIE_R   = 255;   // pie radius
 
-// Visually distinct palette — 20 colors, guaranteed different
 const PALETTE = [
   '#60a5fa','#fb7185','#4ade80','#fbbf24','#a78bfa',
   '#38bdf8','#f97316','#34d399','#e879f9','#facc15',
@@ -175,17 +552,17 @@ const PALETTE = [
 let signaturePlays = [];
 let seriesData     = [];
 let bgNode         = null;
-let pieGroup       = null;   // Konva.Group wrapping entire pie (draggable)
-let currentPieR    = PIE_R;  // mutable radius — changed by resize handle
-let arcNodes       = [];     // refs for radius updates
-let sliceInfos     = [];     // [{startRad, endRad, midRad}] per slice
-let clipGroups     = [];     // refs for clip region updates
-let badgeGroups    = [];     // refs for badge position updates
-let hitCircle      = null;   // invisible hit area
-let resizeHandle   = null;   // drag handle at top of pie
-let resizeLine     = null;   // guide line from center to handle
-let imageNodes     = [];     // card image/text refs for undo restore
-let history        = [];     // undo history stack (max 30)
+let pieGroup       = null;
+let currentPieR    = PIE_R;
+let arcNodes       = [];
+let sliceInfos     = [];
+let clipGroups     = [];
+let badgeGroups    = [];
+let hitCircle      = null;
+let resizeHandle   = null;
+let resizeLine     = null;
+let imageNodes     = [];
+let history        = [];
 
 // ─── Konva Stage ─────────────────────────────────────────────────────────────
 const stage = new Konva.Stage({
@@ -218,16 +595,13 @@ transformer.on('transformstart', pushHistory);
 
 stage.add(bgLayer, mainLayer, uiLayer);
 
-// Dark background
 const stageBg = new Konva.Rect({
   x: 0, y: 0, width: STAGE_W, height: STAGE_H,
-  fill: '#12121f',
-  listening: true,
+  fill: '#12121f', listening: true,
 });
 bgLayer.add(stageBg);
 bgLayer.draw();
 
-// Deselect on empty click
 stage.on('click tap', (e) => {
   if (e.target === stage || e.target === stageBg) {
     transformer.nodes([]);
@@ -264,15 +638,12 @@ async function loadDeck() {
       body: JSON.stringify({ url }),
     });
     const data = await resp.json();
-    if (!resp.ok) { alert('錯誤：' + (data.error || '無法載入牌組')); return; }
+    if (!resp.ok) { alert(t('tp.err_prefix') + (data.error || t('tp.err_load'))); return; }
 
     signaturePlays = data.cards || [];
     seriesData     = data.products || [];
-
-    // Assign a distinct palette color to every play by index
     signaturePlays.forEach((p, i) => { p._color = PALETTE[i % PALETTE.length]; });
 
-    // Pre-load all card images
     await Promise.all(signaturePlays.map(async (p) => {
       p._imgEl = await loadImage(p.img_url);
     }));
@@ -281,14 +652,32 @@ async function loadDeck() {
     renderPie();
     renderStatsOnCanvas();
     history = [];
-    pushHistory();   // initial state — lets user undo back to fresh load
+    pushHistory();
 
+    // Desktop info
     document.getElementById('deck-info').textContent =
-      `${data.deck_title} — ${signaturePlays.length} 種殺招連動，合計 ${data.total_cards} 位玩家`;
+      `${data.deck_title} — ${signaturePlays.length} ${t('tp.deck_info')} ${data.total_cards} ${t('tp.deck_info2')}`;
     document.getElementById('btn-export').disabled = false;
 
+    // Mobile info
+    const mbTitle = document.getElementById('mb-deck-title');
+    const mbSub   = document.getElementById('mb-deck-sub');
+    const mbCount = document.getElementById('plays-count');
+    const fabExp  = document.getElementById('fab-export');
+    if (mbTitle) mbTitle.textContent = data.deck_title || t('tp.mb_deck_label');
+    if (mbSub)   mbSub.textContent   = `${signaturePlays.length} ${t('tp.mb_sub')} ${data.total_cards} ${t('tp.mb_sub2')}`;
+    if (mbCount) mbCount.textContent = signaturePlays.length;
+    if (fabExp)  fabExp.disabled     = false;
+
+    // Hide mobile empty state
+    const mbEmpty = document.getElementById('mb-empty');
+    if (mbEmpty) mbEmpty.classList.add('hidden');
+
+    // Expand bottom sheet to peek on mobile
+    if (mqMobile.matches) setSheetState('peek');
+
   } catch (err) {
-    alert('網路錯誤：' + err.message);
+    alert(t('tp.err_net') + err.message);
   } finally {
     showLoading(false);
   }
@@ -300,7 +689,7 @@ function renderSidebar() {
   playsEl.innerHTML = '';
   for (const p of signaturePlays) {
     const div = document.createElement('div');
-    div.className = 'sidebar-card mb-1';
+    div.className = 'sidebar-card';
     div.innerHTML = `
       <span class="dot" style="background:${p._color}"></span>
       <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.card_name}">${p.card_name}</span>
@@ -314,7 +703,7 @@ function renderSidebar() {
   for (const s of seriesData) {
     const pct = total > 0 ? Math.round(s.count / total * 100) : 0;
     const div = document.createElement('div');
-    div.className = 'sidebar-card mb-1';
+    div.className = 'sidebar-card';
     div.innerHTML = `
       <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</span>
       <span class="count-badge">×${s.count} (${pct}%)</span>`;
@@ -324,11 +713,9 @@ function renderSidebar() {
 
 // ─── Pie Chart ───────────────────────────────────────────────────────────────
 function renderPie() {
-  // Destroy previous pie group
   if (pieGroup) { pieGroup.destroy(); }
   transformer.nodes([]);
 
-  // Reset mutable state
   currentPieR  = PIE_R;
   arcNodes     = [];
   sliceInfos   = [];
@@ -347,15 +734,12 @@ function renderPie() {
   const total = signaturePlays.reduce((s, p) => s + p.count, 0);
   if (total === 0) { mainLayer.add(pieGroup); mainLayer.batchDraw(); return; }
 
-  // Invisible hit area for dragging from any empty spot inside the pie
   hitCircle = new Konva.Circle({
-    x: CX, y: CY, radius: currentPieR,
-    fill: 'transparent',
-    listening: true,
+    x: CX, y: CY, radius: currentPieR, fill: 'transparent', listening: true,
   });
   pieGroup.add(hitCircle);
 
-  let currentAngle = -Math.PI / 2;  // start at 12 o'clock
+  let currentAngle = -Math.PI / 2;
 
   signaturePlays.forEach((play, idx) => {
     const sweep    = (play.count / total) * 2 * Math.PI;
@@ -364,22 +748,14 @@ function renderPie() {
     const midRad   = startRad + sweep / 2;
     sliceInfos.push({ startRad, endRad, midRad });
 
-    // Slice fill
     const arc = new Konva.Arc({
-      x: CX, y: CY,
-      innerRadius: 0,
-      outerRadius: currentPieR,
-      angle:       toDeg(sweep),
-      rotation:    toDeg(startRad),
-      fill:        play._color,
-      stroke:      '#12121f',
-      strokeWidth: 3,
+      x: CX, y: CY, innerRadius: 0, outerRadius: currentPieR,
+      angle: toDeg(sweep), rotation: toDeg(startRad),
+      fill: play._color, stroke: '#12121f', strokeWidth: 3,
     });
     arcNodes.push(arc);
     pieGroup.add(arc);
 
-    // Card image — clipped to this wedge
-    // clipFunc closure captures `currentPieR` by reference — auto-updates on resize
     const clipGroup = new Konva.Group({
       clipFunc: (ctx) => {
         ctx.beginPath();
@@ -390,107 +766,66 @@ function renderPie() {
     });
     clipGroups.push(clipGroup);
 
-    const distR  = currentPieR * 0.58;
-    const midX   = CX + distR * Math.cos(midRad);
-    const midY   = CY + distR * Math.sin(midRad);
+    const distR = currentPieR * 0.58;
+    const midX  = CX + distR * Math.cos(midRad);
+    const midY  = CY + distR * Math.sin(midRad);
 
     if (play._imgEl) {
-      const imgW  = Math.max(80, Math.min(120, currentPieR * 0.42)) * 2.5;
-      const imgH  = imgW * 1.4;
-
+      const imgW = Math.max(80, Math.min(120, currentPieR * 0.42)) * 2.5;
+      const imgH = imgW * 1.4;
       const imgNode = new Konva.Image({
-        image:    play._imgEl,
-        x: midX - imgW / 2,
-        y: midY - imgH / 2,
-        width: imgW, height: imgH,
-        draggable: true,
-        name: 'cardImg',
+        image: play._imgEl,
+        x: midX - imgW / 2, y: midY - imgH / 2,
+        width: imgW, height: imgH, draggable: true, name: 'cardImg',
       });
-
       imgNode.on('dragstart', pushHistory);
       imgNode.on('mousedown touchstart', (e) => {
-        e.cancelBubble = true;
-        transformer.nodes([imgNode]);
-        uiLayer.batchDraw();
+        e.cancelBubble = true; transformer.nodes([imgNode]); uiLayer.batchDraw();
       });
       imgNode.on('mouseover', () => { stage.container().style.cursor = 'pointer'; });
       imgNode.on('mouseout',  () => { stage.container().style.cursor = 'move'; });
-
       imageNodes.push(imgNode);
       clipGroup.add(imgNode);
     } else {
-      // ── Fallback: card name text when no image available ──
       const sliceW = 2 * currentPieR * Math.sin(sweep / 2);
       const boxW   = Math.max(60, Math.min(sliceW * 0.75, 110));
       const boxH   = 52;
-
       clipGroup.add(new Konva.Rect({
-        x: midX - boxW / 2,
-        y: midY - boxH / 2,
-        width: boxW, height: boxH,
-        fill:         'rgba(13,13,26,0.7)',
-        cornerRadius: 6,
-        stroke:       play._color,
-        strokeWidth:  1,
+        x: midX - boxW / 2, y: midY - boxH / 2, width: boxW, height: boxH,
+        fill: 'rgba(13,13,26,0.7)', cornerRadius: 6, stroke: play._color, strokeWidth: 1,
       }));
-
       const textNode = new Konva.Text({
-        x:    midX - boxW / 2,
-        y:    midY - boxH / 2,
-        text: play.card_name,
-        fontSize:       11,
-        fontStyle:      'bold',
-        fontFamily:     'Noto Sans TC, sans-serif',
-        fill:           '#ffffff',
-        width:          boxW,
-        height:         boxH,
-        align:          'center',
-        verticalAlign:  'middle',
-        wrap:           'word',
-        padding:        4,
-        draggable:      true,
-        name:           'cardText',
+        x: midX - boxW / 2, y: midY - boxH / 2, text: play.card_name,
+        fontSize: 11, fontStyle: 'bold', fontFamily: 'Noto Sans TC, sans-serif',
+        fill: '#ffffff', width: boxW, height: boxH,
+        align: 'center', verticalAlign: 'middle', wrap: 'word', padding: 4,
+        draggable: true, name: 'cardText',
       });
-
       textNode.on('dragstart', pushHistory);
       textNode.on('mousedown touchstart', (e) => {
-        e.cancelBubble = true;
-        transformer.nodes([textNode]);
-        uiLayer.batchDraw();
+        e.cancelBubble = true; transformer.nodes([textNode]); uiLayer.batchDraw();
       });
       textNode.on('mouseover', () => { stage.container().style.cursor = 'pointer'; });
       textNode.on('mouseout',  () => { stage.container().style.cursor = 'move'; });
-
       imageNodes.push(textNode);
       clipGroup.add(textNode);
     }
     pieGroup.add(clipGroup);
-
-    badgeGroups.push(null);  // keep index alignment for updatePieRadius
+    badgeGroups.push(null);
     currentAngle = endRad;
   });
 
-  // ─── Resize guide line: center → handle ──────────────────────────────────
   resizeLine = new Konva.Line({
     points: [CX, CY, CX, CY - currentPieR],
-    stroke: 'rgba(168,216,234,0.35)',
-    strokeWidth: 1,
-    dash: [5, 4],
-    listening: false,
-    name: 'resizeLine',
+    stroke: 'rgba(168,216,234,0.35)', strokeWidth: 1, dash: [5, 4],
+    listening: false, name: 'resizeLine',
   });
   pieGroup.add(resizeLine);
 
-  // ─── Resize handle at 12-o'clock edge of pie ─────────────────────────────
   resizeHandle = new Konva.Group({
-    x: CX,
-    y: CY - currentPieR,
-    draggable: true,
-    name: 'resizeHandle',
+    x: CX, y: CY - currentPieR, draggable: true, name: 'resizeHandle',
     dragBoundFunc(pos) {
-      // Absolute coords from Konva. Lock x to pie center; clamp radius 80–450.
-      const pgX = pieGroup.x();
-      const pgY = pieGroup.y();
+      const pgX = pieGroup.x(); const pgY = pieGroup.y();
       return {
         x: CX + pgX,
         y: Math.max(CY - 450 + pgY, Math.min(CY - 80 + pgY, pos.y)),
@@ -498,20 +833,16 @@ function renderPie() {
     },
   });
   resizeHandle.add(new Konva.Circle({
-    radius: 12,
-    fill: 'rgba(168,216,234,0.15)',
-    stroke: '#A8D8EA',
-    strokeWidth: 1.5,
+    radius: 12, fill: 'rgba(168,216,234,0.15)', stroke: '#A8D8EA', strokeWidth: 1.5,
   }));
   resizeHandle.add(new Konva.Text({
     text: '↕', fontSize: 12, fill: '#A8D8EA',
     width: 24, height: 24, offsetX: 12, offsetY: 12,
-    align: 'center', verticalAlign: 'middle',
-    listening: false,
+    align: 'center', verticalAlign: 'middle', listening: false,
   }));
   resizeHandle.on('dragstart', pushHistory);
   resizeHandle.on('dragmove', () => {
-    const newR = CY - resizeHandle.y();  // local y; handle sits above CY
+    const newR = CY - resizeHandle.y();
     updatePieRadius(newR);
     resizeLine.points([CX, CY, CX, CY - currentPieR]);
     mainLayer.batchDraw();
@@ -525,43 +856,37 @@ function renderPie() {
   mainLayer.batchDraw();
 }
 
-// ─── Update Pie Radius (keeps card images in place) ──────────────────────────
+// ─── Update Pie Radius ────────────────────────────────────────────────────────
 function updatePieRadius(newR) {
   newR = Math.max(80, Math.min(450, newR));
-  currentPieR = newR;  // clipFunc closures capture this by reference → auto-update
-
-  if (hitCircle)    hitCircle.radius(newR);
+  currentPieR = newR;
+  if (hitCircle) hitCircle.radius(newR);
   arcNodes.forEach(arc => arc.outerRadius(newR));
-
   badgeGroups.forEach((badge, i) => {
     if (!badge) return;
     const bR = newR * 0.87;
     badge.x(CX + bR * Math.cos(sliceInfos[i].midRad));
     badge.y(CY + bR * Math.sin(sliceInfos[i].midRad));
   });
-
   if (resizeHandle) resizeHandle.y(CY - newR);
   mainLayer.batchDraw();
 }
 
-// ─── Undo History ────────────────────────────────────────────────────────────
+// ─── Undo History ─────────────────────────────────────────────────────────────
 function snapshotState() {
   const sg = mainLayer.findOne('#statsGroup');
   return {
     pieR:     currentPieR,
-    piePos:   pieGroup  ? { x: pieGroup.x(),  y: pieGroup.y()  } : null,
-    statsPos: sg        ? { x: sg.x(),        y: sg.y()        } : null,
-    bgPos:    bgNode    ? {
+    piePos:   pieGroup ? { x: pieGroup.x(), y: pieGroup.y() } : null,
+    statsPos: sg       ? { x: sg.x(),       y: sg.y()       } : null,
+    bgPos:    bgNode   ? {
       x: bgNode.x(), y: bgNode.y(),
       width: bgNode.width(), height: bgNode.height(),
-      scaleX: bgNode.scaleX(), scaleY: bgNode.scaleY(),
-      rotation: bgNode.rotation(),
+      scaleX: bgNode.scaleX(), scaleY: bgNode.scaleY(), rotation: bgNode.rotation(),
     } : null,
     images: imageNodes.map(n => n ? {
-      x: n.x(), y: n.y(),
-      width: n.width(), height: n.height(),
-      scaleX: n.scaleX(), scaleY: n.scaleY(),
-      rotation: n.rotation(),
+      x: n.x(), y: n.y(), width: n.width(), height: n.height(),
+      scaleX: n.scaleX(), scaleY: n.scaleY(), rotation: n.rotation(),
     } : null),
   };
 }
@@ -575,23 +900,16 @@ function pushHistory() {
 function undo() {
   if (history.length === 0) return;
   const snap = history.pop();
-
   if (pieGroup && snap.piePos) { pieGroup.x(snap.piePos.x); pieGroup.y(snap.piePos.y); }
-
   if (snap.pieR !== currentPieR) updatePieRadius(snap.pieR);
-
   snap.images.forEach((s, i) => {
     if (!s || !imageNodes[i]) return;
     const n = imageNodes[i];
-    n.x(s.x); n.y(s.y);
-    n.width(s.width); n.height(s.height);
-    n.scaleX(s.scaleX); n.scaleY(s.scaleY);
-    n.rotation(s.rotation);
+    n.x(s.x); n.y(s.y); n.width(s.width); n.height(s.height);
+    n.scaleX(s.scaleX); n.scaleY(s.scaleY); n.rotation(s.rotation);
   });
-
   const sg = mainLayer.findOne('#statsGroup');
   if (sg && snap.statsPos) { sg.x(snap.statsPos.x); sg.y(snap.statsPos.y); }
-
   if (bgNode && snap.bgPos) {
     bgNode.x(snap.bgPos.x); bgNode.y(snap.bgPos.y);
     bgNode.width(snap.bgPos.width); bgNode.height(snap.bgPos.height);
@@ -599,20 +917,21 @@ function undo() {
     bgNode.rotation(snap.bgPos.rotation);
     bgLayer.batchDraw();
   }
-
   transformer.nodes([]);
-  mainLayer.batchDraw();
-  uiLayer.batchDraw();
+  mainLayer.batchDraw(); uiLayer.batchDraw();
   if (resizeLine) resizeLine.points([CX, CY, CX, CY - currentPieR]);
   updateUndoBtn();
 }
 
 function updateUndoBtn() {
+  const disabled = history.length === 0;
   const btn = document.getElementById('btn-undo');
-  if (btn) btn.disabled = history.length === 0;
+  if (btn) btn.disabled = disabled;
+  const fab = document.getElementById('fab-undo');
+  if (fab) fab.disabled = disabled;
 }
 
-// ─── Stats Table on Canvas ───────────────────────────────────────────────────
+// ─── Stats Table on Canvas ────────────────────────────────────────────────────
 function renderStatsOnCanvas() {
   mainLayer.find('#statsGroup').forEach(n => n.destroy());
   if (seriesData.length === 0) { mainLayer.batchDraw(); return; }
@@ -624,55 +943,30 @@ function renderStatsOnCanvas() {
   const nameW  = Math.floor((tableW - PAD * 2) * 0.67);
   const countW = Math.floor((tableW - PAD * 2) * 0.33);
 
-  // Measure how tall each series-name row needs to be (handles wrapping)
   function measureH(text, fontSize, width) {
-    const t = new Konva.Text({
-      text, fontSize, width,
-      fontFamily: 'Noto Sans TC, sans-serif',
-      wrap: 'word',
-    });
-    return t.height();  // Konva auto-sizes when height is omitted
+    const t = new Konva.Text({ text, fontSize, width, fontFamily: 'Noto Sans TC, sans-serif', wrap: 'word' });
+    return t.height();
   }
 
   const rowHeights = seriesData.map(s => {
-    const pctStr = total > 0
-      ? `×${s.count}  ${Math.round(s.count / total * 100)}%`
-      : `×${s.count}  0%`;
-    const nameH  = measureH(s.name, 12, nameW);
-    const countH = measureH(pctStr,  12, countW);
-    return Math.max(nameH, countH, ROW_MIN_H) + 6;  // +6 vertical breathing room
+    const pctStr = total > 0 ? `×${s.count}  ${Math.round(s.count / total * 100)}%` : `×${s.count}  0%`;
+    return Math.max(measureH(s.name, 12, nameW), measureH(pctStr, 12, countW), ROW_MIN_H) + 6;
   });
 
   const HEADER_H = ROW_MIN_H + 10;
   const tableH   = PAD * 2 + HEADER_H + rowHeights.reduce((a, b) => a + b, 0);
 
-  const statsGroup = new Konva.Group({
-    id: 'statsGroup',
-    x: 8,
-    y: 8,
-    draggable: true,
-  });
+  const statsGroup = new Konva.Group({ id: 'statsGroup', x: 8, y: 8, draggable: true });
 
   statsGroup.add(new Konva.Rect({
-    width: tableW, height: tableH,
-    fill:         'rgba(18,18,31,0.93)',
-    cornerRadius: 8,
-    stroke:       'rgba(242,167,195,0.4)',
-    strokeWidth:  1,
-    shadowColor:  'rgba(0,0,0,0.5)',
-    shadowBlur:   12,
-    shadowOffset: { x: 2, y: 2 },
+    width: tableW, height: tableH, fill: 'rgba(18,18,31,0.93)', cornerRadius: 8,
+    stroke: 'rgba(242,167,195,0.4)', strokeWidth: 1,
+    shadowColor: 'rgba(0,0,0,0.5)', shadowBlur: 12, shadowOffset: { x: 2, y: 2 },
   }));
-
   statsGroup.add(new Konva.Text({
-    x: PAD, y: PAD,
-    text: '系列統計',
-    fontSize: 13, fontStyle: 'bold',
-    fontFamily: 'Noto Sans TC, sans-serif',
-    fill: '#F2A7C3',
-    width: tableW - PAD * 2,
+    x: PAD, y: PAD, text: t('tp.canvas_series'), fontSize: 13, fontStyle: 'bold',
+    fontFamily: 'Noto Sans TC, sans-serif', fill: '#F2A7C3', width: tableW - PAD * 2,
   }));
-
   statsGroup.add(new Konva.Line({
     points: [PAD, PAD + HEADER_H - 4, tableW - PAD, PAD + HEADER_H - 4],
     stroke: 'rgba(255,255,255,0.12)', strokeWidth: 1,
@@ -680,34 +974,18 @@ function renderStatsOnCanvas() {
 
   let currentY = PAD + HEADER_H;
   seriesData.forEach((s, i) => {
-    const pctStr = total > 0
-      ? `×${s.count}  ${Math.round(s.count / total * 100)}%`
-      : `×${s.count}  0%`;
+    const pctStr = total > 0 ? `×${s.count}  ${Math.round(s.count / total * 100)}%` : `×${s.count}  0%`;
     const rH = rowHeights[i];
-
-    // Series name — wraps if long, vertically centered within row
     statsGroup.add(new Konva.Text({
-      x: PAD, y: currentY,
-      text: s.name, fontSize: 12,
-      fontFamily: 'Noto Sans TC, sans-serif',
-      fill: '#e5e7eb',
-      width: nameW,
-      height: rH,
-      wrap: 'word',
-      verticalAlign: 'middle',
+      x: PAD, y: currentY, text: s.name, fontSize: 12,
+      fontFamily: 'Noto Sans TC, sans-serif', fill: '#e5e7eb',
+      width: nameW, height: rH, wrap: 'word', verticalAlign: 'middle',
     }));
-    // Count + pct — right-aligned, vertically centered
     statsGroup.add(new Konva.Text({
-      x: PAD + nameW, y: currentY,
-      text: pctStr, fontSize: 12,
-      fontFamily: 'Noto Sans TC, sans-serif',
-      fill: '#a8d8ea',
-      width: countW,
-      height: rH,
-      align: 'right',
-      verticalAlign: 'middle',
+      x: PAD + nameW, y: currentY, text: pctStr, fontSize: 12,
+      fontFamily: 'Noto Sans TC, sans-serif', fill: '#a8d8ea',
+      width: countW, height: rH, align: 'right', verticalAlign: 'middle',
     }));
-
     currentY += rH;
   });
 
@@ -725,28 +1003,18 @@ function handleBgUpload(input) {
   loadImage(URL.createObjectURL(input.files[0])).then((img) => {
     if (!img) return;
     if (bgNode) bgNode.destroy();
-
     const scale = Math.max(STAGE_W / img.width, STAGE_H / img.height);
     bgNode = new Konva.Image({
-      image:     img,
-      x:         (STAGE_W - img.width  * scale) / 2,
-      y:         (STAGE_H - img.height * scale) / 2,
-      width:     img.width  * scale,
-      height:    img.height * scale,
-      draggable: true,
-      name:      'bgImage',
+      image: img,
+      x: (STAGE_W - img.width  * scale) / 2, y: (STAGE_H - img.height * scale) / 2,
+      width: img.width * scale, height: img.height * scale,
+      draggable: true, name: 'bgImage',
     });
     bgNode.on('dragstart', pushHistory);
     bgNode.on('mousedown touchstart', (e) => {
-      e.cancelBubble = true;
-      pushHistory();
-      transformer.nodes([bgNode]);
-      uiLayer.batchDraw();
+      e.cancelBubble = true; pushHistory(); transformer.nodes([bgNode]); uiLayer.batchDraw();
     });
-    bgLayer.add(bgNode);
-    // Keep bgNode above stageBg (index 0) but bgLayer is always below mainLayer
-    bgNode.zIndex(1);
-    bgLayer.batchDraw();
+    bgLayer.add(bgNode); bgNode.zIndex(1); bgLayer.batchDraw();
     document.getElementById('btn-clear-bg').style.display = 'inline-flex';
   });
 }
@@ -763,23 +1031,17 @@ function exportPng() {
   const prevNodes = transformer.nodes();
   transformer.nodes([]);
   uiLayer.draw();
-
-  // Hide resize handle + guide line during export
   if (resizeHandle) resizeHandle.visible(false);
   if (resizeLine)   resizeLine.visible(false);
   mainLayer.draw();
-
   document.fonts.ready.then(() => {
     const dataURL = stage.toDataURL({ pixelRatio: 2, mimeType: 'image/png' });
     const a = document.createElement('a');
     a.href = dataURL; a.download = `tournament_pie_${Date.now()}.png`; a.click();
-
-    // Restore
     if (resizeHandle) resizeHandle.visible(true);
     if (resizeLine)   resizeLine.visible(true);
     transformer.nodes(prevNodes);
-    mainLayer.draw();
-    uiLayer.draw();
+    mainLayer.draw(); uiLayer.draw();
   });
 }
 
@@ -792,11 +1054,123 @@ document.getElementById('url-input').addEventListener('keydown', (e) => {
 });
 document.addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-    // Don't trigger when typing in the URL input
     if (document.activeElement === document.getElementById('url-input')) return;
-    e.preventDefault();
-    undo();
+    e.preventDefault(); undo();
   }
+});
+
+// ─── Responsive stage scale ───────────────────────────────────────────────────
+const mqMobile = window.matchMedia('(max-width: 767px)');
+
+function updateStageScale() {
+  const wrapper = document.getElementById('stage-wrapper');
+  if (!wrapper) return;
+
+  if (mqMobile.matches) {
+    const mbCanvas = document.getElementById('mb-canvas');
+    if (!mbCanvas) return;
+    const availW = mbCanvas.clientWidth;
+    const availH = mbCanvas.clientHeight;
+    const scale  = Math.min(1, availW / STAGE_W, (availH || STAGE_H) / STAGE_H);
+    wrapper.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    wrapper.style.marginBottom = '';
+  } else {
+    // Desktop: reset inline styles (CSS handles display)
+    wrapper.style.transform    = '';
+    wrapper.style.marginBottom = '';
+  }
+}
+
+// ─── Mobile: move DOM elements between desktop ↔ mobile ──────────────────────
+function syncStageHost() {
+  const isMobile   = mqMobile.matches;
+  const sw         = document.getElementById('stage-wrapper');
+  const mbHost     = document.getElementById('mb-stage-host');
+  const dtHost     = document.getElementById('desktop-canvas-host');
+  const plays      = document.getElementById('plays-list');
+  const series     = document.getElementById('series-list');
+  const tabPlays   = document.getElementById('tab-plays');
+  const tabSeries  = document.getElementById('tab-series');
+  const dtPlays    = document.getElementById('dt-plays-card');
+  const dtSeries   = document.getElementById('dt-series-card');
+
+  if (isMobile) {
+    if (sw    && mbHost   && sw.parentElement    !== mbHost)   mbHost.appendChild(sw);
+    if (plays && tabPlays && plays.parentElement !== tabPlays) tabPlays.appendChild(plays);
+    if (series && tabSeries && series.parentElement !== tabSeries) tabSeries.appendChild(series);
+  } else {
+    if (sw    && dtHost   && sw.parentElement    !== dtHost)   dtHost.appendChild(sw);
+    if (plays && dtPlays  && plays.parentElement !== dtPlays)  dtPlays.appendChild(plays);
+    if (series && dtSeries && series.parentElement !== dtSeries) dtSeries.appendChild(series);
+    // Clear mobile inline transform when returning to desktop
+    if (sw) { sw.style.transform = ''; sw.style.marginBottom = ''; }
+  }
+
+  setTimeout(updateStageScale, 30);
+}
+
+syncStageHost();
+mqMobile.addEventListener('change', syncStageHost);
+window.addEventListener('resize', updateStageScale);
+
+// ─── Mobile: load deck ───────────────────────────────────────────────────────
+function loadDeckMobile() {
+  const val = document.getElementById('url-input-m').value.trim();
+  if (val) document.getElementById('url-input').value = val;
+  loadDeck();
+}
+
+// ─── Mobile: bottom sheet state machine ──────────────────────────────────────
+const SHEET_STATES = ['collapsed', 'peek', 'full'];
+let sheetState = localStorage.getItem('tp.mobile.sheet') || 'peek';
+
+function setSheetState(next) {
+  sheetState = next;
+  const sheet = document.getElementById('mb-sheet');
+  if (sheet) sheet.dataset.state = next;
+  localStorage.setItem('tp.mobile.sheet', next);
+  // Recompute canvas scale after CSS transition completes
+  setTimeout(updateStageScale, 320);
+}
+
+// Restore sheet state on load
+(function () {
+  const sheet = document.getElementById('mb-sheet');
+  if (sheet && sheetState) sheet.dataset.state = sheetState;
+})();
+
+// Tap handle to cycle states
+document.getElementById('sheet-handle')?.addEventListener('click', () => {
+  const idx  = SHEET_STATES.indexOf(sheetState);
+  setSheetState(SHEET_STATES[(idx + 1) % SHEET_STATES.length]);
+});
+
+// Touch-drag on handle to snap
+(function () {
+  const sheet  = document.getElementById('mb-sheet');
+  const handle = document.getElementById('sheet-handle');
+  if (!sheet || !handle) return;
+
+  let ty0 = 0;
+  handle.addEventListener('touchstart', (e) => { ty0 = e.touches[0].clientY; }, { passive: true });
+  handle.addEventListener('touchend',   (e) => {
+    const dy = ty0 - e.changedTouches[0].clientY;
+    if (Math.abs(dy) < 15) return;
+    const idx  = SHEET_STATES.indexOf(sheetState);
+    if (dy > 0 && idx < SHEET_STATES.length - 1) setSheetState(SHEET_STATES[idx + 1]);
+    if (dy < 0 && idx > 0)                        setSheetState(SHEET_STATES[idx - 1]);
+  }, { passive: true });
+})();
+
+// ─── Mobile: tabs ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('is-active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('is-active'));
+    tab.classList.add('is-active');
+    const panel = document.getElementById('tab-' + tab.dataset.tab);
+    if (panel) panel.classList.add('is-active');
+  });
 });
 </script>
 {% endblock %}
