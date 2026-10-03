@@ -1,14 +1,20 @@
 import json
 import re
+from urllib.parse import urlparse
 
 import requests as http_requests
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 
-from deck_showcase.services.scraper import scrape_deck
+from deck_showcase.services.scraper import parse_deck_input, scrape_deck
 
 WS_CARD_IMG_BASE = 'https://ws-tcg.com/wordpress/wp-content/images/cardlist/'
+
+# Hosts allowed through proxy_image's ?url= passthrough (Bottleneko's own
+# card image CDN). Keep this tight — proxy_image is server-side fetch, so an
+# unrestricted host would make it an open proxy / SSRF vector.
+ALLOWED_PROXY_HOSTS = {'img.bottleneko.app'}
 
 
 def editor_page(request):
@@ -26,11 +32,7 @@ def fetch_deck(request):
     if not url:
         return JsonResponse({'error': '請輸入貓罐子網址'}, status=400)
 
-    match = re.search(r'bottleneko\.app/deck/([A-Za-z0-9]+)', url)
-    if match:
-        deck_code = match.group(1)
-    else:
-        deck_code = url  # allow bare deck code
+    deck_code, _source = parse_deck_input(url, default_source='bottleneko')
 
     try:
         result = scrape_deck(deck_code, source='bottleneko')
@@ -41,7 +43,12 @@ def fetch_deck(request):
     cards = []
     for c in result['cards']:
         img_path = c.get('img', '')
-        img_url = f'/tournament_pie/proxy_image/?path={img_path}' if img_path else ''
+        if not img_path:
+            img_url = ''
+        elif img_path.startswith('http'):
+            img_url = f'/tournament_pie/proxy_image/?url={img_path}'
+        else:
+            img_url = f'/tournament_pie/proxy_image/?path={img_path}'
         cards.append({
             'card_number': c['card_number'],
             'card_name': c.get('card_name', ''),
@@ -70,6 +77,23 @@ def proxy_image(request):
       - {char}xx_we{n}   e.g. kxx_we50  (cross-series WE)
     We try both so every card is found regardless of which convention applies.
     """
+    full_url = request.GET.get('url', '').strip()
+    if full_url:
+        parsed = urlparse(full_url)
+        if parsed.scheme != 'https' or parsed.netloc not in ALLOWED_PROXY_HOSTS:
+            return HttpResponse(status=400)
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        try:
+            resp = http_requests.get(full_url, timeout=10, headers=headers)
+            if resp.status_code == 200:
+                return HttpResponse(
+                    resp.content,
+                    content_type=resp.headers.get('Content-Type', 'image/png'),
+                )
+        except Exception:
+            pass
+        return HttpResponse(status=404)
+
     img_path = request.GET.get('path', '').strip()
     if not img_path or not re.match(r'^[a-z0-9/_.\-]+$', img_path):
         return HttpResponse(status=400)

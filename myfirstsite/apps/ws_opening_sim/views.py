@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from apps.deck_showcase.services.scraper import WS_TCG_IMG_BASE, scrape_deck
+from apps.deck_showcase.services.scraper import WS_TCG_IMG_BASE, parse_deck_input, scrape_deck
 
 VALID_SOURCES = {'decklog_en', 'decklog_jp', 'bottleneko'}
 
@@ -17,10 +17,11 @@ def load_deck(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'POST required'}, status=405)
 
-    deck_code = request.POST.get('deck_code', '').strip()
+    deck_code_raw = request.POST.get('deck_code', '').strip()
     source = request.POST.get('source', 'bottleneko').strip()
-    if not deck_code:
+    if not deck_code_raw:
         return JsonResponse({'error': 'Please provide a deck code.'}, status=400)
+    deck_code, source = parse_deck_input(deck_code_raw, default_source=source)
     if source not in VALID_SOURCES:
         source = 'bottleneko'
 
@@ -35,7 +36,7 @@ def load_deck(request):
         'count': c.get('count', 1),
         'level': c.get('level', ''),
         'card_type': c.get('card_type', ''),
-        'img_url': WS_TCG_IMG_BASE + c['img'] if c.get('img') else '',
+        'img_url': (c['img'] if c['img'].startswith('http') else WS_TCG_IMG_BASE + c['img']) if c.get('img') else '',
     } for c in deck.get('cards', [])]
 
     if not cards:

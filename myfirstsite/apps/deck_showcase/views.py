@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
-from .services.scraper import scrape_deck
+from .services.scraper import scrape_deck, parse_deck_input
 from .services.showcase import generate_showcase_image
 
 VALID_SOURCES = {'decklog_en', 'decklog_jp', 'bottleneko'}
@@ -20,11 +20,12 @@ def showcase_cards(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'POST required'}, status=405)
 
-    deck_code = request.POST.get('deck_code', '').strip()
+    deck_code_raw = request.POST.get('deck_code', '').strip()
     source = request.POST.get('source', 'decklog_en').strip()
 
-    if not deck_code:
+    if not deck_code_raw:
         return JsonResponse({'error': 'Please provide a deck code.'}, status=400)
+    deck_code, source = parse_deck_input(deck_code_raw, default_source=source)
     if source not in VALID_SOURCES:
         source = 'decklog_en'
 
@@ -39,10 +40,12 @@ def showcase_cards(request):
         cards = []
         for c in deck_data['cards']:
             img_path = c.get('img', '')
-            if img_path:
-                img_url = f'https://ws-tcg.com/wordpress/wp-content/images/cardlist/{img_path}'
-            else:
+            if not img_path:
                 img_url = ''
+            elif img_path.startswith('http'):
+                img_url = img_path
+            else:
+                img_url = f'https://ws-tcg.com/wordpress/wp-content/images/cardlist/{img_path}'
             cards.append({
                 'card_number': c.get('card_number', ''),
                 'card_name': c.get('card_name', ''),
@@ -75,16 +78,17 @@ def showcase_generate(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'POST required'}, status=405)
 
-    deck_code = request.POST.get('deck_code', '').strip()
+    deck_code_raw = request.POST.get('deck_code', '').strip()
     source = request.POST.get('source', 'decklog_en').strip()
     selected_numbers = request.POST.getlist('selected_cards[]')
     player_name = request.POST.get('player_name', '').strip()[:20]
     player_message = request.POST.get('player_message', '').strip()[:40]
 
-    if not deck_code:
+    if not deck_code_raw:
         return JsonResponse({'error': 'Please provide a deck code.'}, status=400)
     if not selected_numbers:
         return JsonResponse({'error': 'Please select at least one card.'}, status=400)
+    deck_code, source = parse_deck_input(deck_code_raw, default_source=source)
     if source not in VALID_SOURCES:
         source = 'decklog_en'
 

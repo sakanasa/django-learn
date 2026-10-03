@@ -5,12 +5,12 @@
 
 {% block extra_head %}
 <style>
-  :root { --card-w: 100px; --tbl-scale: 1; --cx-rot: 90deg; --cx-w: 139.75%; }
-  /* CX source images are landscape; rotate them so they sit upright in a portrait slot like characters */
+  :root { --card-w: 100px; }
+  /* CX source images are landscape; keep them in original orientation, centered in a portrait slot like characters */
   .cx-box { position: relative; width: 100%; aspect-ratio: 400 / 559; overflow: hidden; }
   .cx-box img {
-    position: absolute; top: 50%; left: 50%; width: var(--cx-w); height: auto;
-    transform: translate(-50%, -50%) rotate(var(--cx-rot));
+    position: absolute; top: 50%; left: 50%; width: 100%; height: auto;
+    transform: translate(-50%, -50%);
   }
   body.oc-wide main { max-width: none; }
   body.oc-wide #oc_root { max-width: none; }
@@ -39,7 +39,7 @@
   .oc-mini-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--card-w) * 0.55), calc(var(--card-w) * 0.55))); gap: 0.4rem; }
   .oc-mini { border-radius: 0.3rem; overflow: hidden; background: rgba(255,255,255,0.04); font-size: 0.55rem; color: #9ca3af; text-align: center; }
   .oc-mini img { width: 100%; display: block; }
-  .prob-table { font-size: calc(0.75rem * var(--tbl-scale)); }
+  .prob-table { font-size: 0.75rem; }
   .prob-table td, .prob-table th { padding: 0.35rem 0.5rem; white-space: nowrap; }
   .prob-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden; min-width: 60px; }
   .prob-bar > span { display: block; height: 100%; background: linear-gradient(90deg, #A8D8EA, #F2A7C3); }
@@ -127,12 +127,7 @@
         <input type="range" id="zoom_card" min="50" max="280" step="5" value="100">
         <span id="zoom_card_val" class="w-10 text-gray-300">100px</span>
       </label>
-      <label>機率表
-        <input type="range" id="zoom_tbl" min="70" max="170" step="5" value="100">
-        <span id="zoom_tbl_val" class="w-10 text-gray-300">100%</span>
-      </label>
       <button type="button" id="wide_btn" class="zbtn"><i class="fas fa-expand mr-1"></i>滿版</button>
-      <button type="button" id="cx_rot_btn" class="zbtn" title="切換 CX／橫向卡的顯示方向">CX 轉向</button>
       <button type="button" id="zoom_reset" class="zbtn"><i class="fas fa-rotate-left mr-1"></i>重設</button>
       <span class="text-[0.65rem] text-gray-500">提示：在手牌區按住 Ctrl 並滾動滑鼠滾輪也能縮放卡片</span>
     </div>
@@ -452,34 +447,23 @@
 
   /* ---------- zoom ---------- */
   const ZKEY = 'ws_opening_sim.zoom';
-  const ZDEF = { card: 100, tbl: 100, wide: false, cxRot: 90 };
+  const ZDEF = { card: 100, wide: false };
   let zoom = { ...ZDEF };
   try { Object.assign(zoom, JSON.parse(localStorage.getItem(ZKEY) || '{}')); } catch (e) {}
 
   function applyZoom(save = true) {
     zoom.card = Math.min(280, Math.max(50, Math.round(zoom.card)));
-    zoom.tbl = Math.min(170, Math.max(70, Math.round(zoom.tbl)));
     const root = document.documentElement.style;
     root.setProperty('--card-w', zoom.card + 'px');
-    root.setProperty('--tbl-scale', zoom.tbl / 100);
-    if (![90, -90, 0].includes(zoom.cxRot)) zoom.cxRot = 90;
-    root.setProperty('--cx-rot', zoom.cxRot + 'deg');
-    // Original orientation: keep the landscape art unrotated, fitted to the slot width
-    root.setProperty('--cx-w', zoom.cxRot === 0 ? '100%' : '139.75%');
-    $('cx_rot_btn').innerHTML = '<i class="fas fa-rotate-right mr-1"></i>CX 轉向：'
-      + ({ 90: '順時針 90°', '-90': '逆時針 90°', 0: '原本方向' })[zoom.cxRot];
     document.body.classList.toggle('oc-wide', !!zoom.wide);
     $('zoom_card').value = zoom.card; $('zoom_card_val').textContent = zoom.card + 'px';
-    $('zoom_tbl').value = zoom.tbl; $('zoom_tbl_val').textContent = zoom.tbl + '%';
     $('wide_btn').classList.toggle('on', !!zoom.wide);
     $('wide_btn').innerHTML = zoom.wide
       ? '<i class="fas fa-compress mr-1"></i>標準寬度' : '<i class="fas fa-expand mr-1"></i>滿版';
     if (save) { try { localStorage.setItem(ZKEY, JSON.stringify(zoom)); } catch (e) {} }
   }
   $('zoom_card').addEventListener('input', e => { zoom.card = +e.target.value; applyZoom(); });
-  $('zoom_tbl').addEventListener('input', e => { zoom.tbl = +e.target.value; applyZoom(); });
   $('wide_btn').addEventListener('click', () => { zoom.wide = !zoom.wide; applyZoom(); });
-  $('cx_rot_btn').addEventListener('click', () => { zoom.cxRot = ({ 90: -90, '-90': 0, 0: 90 })[zoom.cxRot] ?? 90; applyZoom(); });
   $('zoom_reset').addEventListener('click', () => { zoom = { ...ZDEF }; applyZoom(); });
   $('hand').addEventListener('wheel', e => {
     if (!e.ctrlKey) return;

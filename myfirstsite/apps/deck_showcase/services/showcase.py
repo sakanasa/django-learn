@@ -47,7 +47,7 @@ def _load_font(size):
 
 def _download_image(img_path):
     """Download a card image and return as PIL Image."""
-    url = WS_TCG_IMG_BASE + img_path
+    url = img_path if img_path.startswith('http') else WS_TCG_IMG_BASE + img_path
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     }

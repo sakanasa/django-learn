@@ -8,8 +8,36 @@ WS_TCG_IMG_BASE = 'https://ws-tcg.com/wordpress/wp-content/images/cardlist/'
 DECKLOG_EN_API = 'https://decklog-en.bushiroad.com/system/app-ja/api/view/{deck_code}'
 DECKLOG_JP_API = 'https://decklog.bushiroad.com/system/app/api/view/{deck_code}'
 
-# Bottleneko API endpoint
-BOTTLENEKO_API = 'https://bottleneko.app/api/deck/{deck_code}'
+# Bottleneko API endpoint (site relaunched as a Nuxt SPA; the deck API now
+# lives on the api.bottleneko.app subdomain under /decks/{code})
+BOTTLENEKO_API = 'https://api.bottleneko.app/decks/{deck_code}'
+
+# Deck share-page URL patterns, used to pull a bare deck code out of a
+# pasted full URL (e.g. https://bottleneko.app/ws/deck/ajdeB -> 'ajdeB').
+_DECK_URL_PATTERNS = (
+    (re.compile(r'bottleneko\.app/(?:[\w-]+/)?deck/([A-Za-z0-9]+)'), 'bottleneko'),
+    (re.compile(r'decklog\.bushiroad\.com/view/([A-Za-z0-9]+)'), 'decklog_jp'),
+    (re.compile(r'decklog-en\.bushiroad\.com/(?:[\w-]+/)?view/([A-Za-z0-9]+)'), 'decklog_en'),
+)
+
+
+def parse_deck_input(raw, default_source='bottleneko'):
+    """Accept either a bare deck code or a full deck share URL.
+
+    Recognizes Bottleneko and Decklog (EN/JP) share URLs and extracts the
+    deck code plus the source they imply, overriding whatever source the
+    caller had selected. Anything else is treated as a literal deck code
+    paired with default_source.
+
+    Returns:
+        (deck_code, source) tuple.
+    """
+    text = (raw or '').strip()
+    for pattern, source in _DECK_URL_PATTERNS:
+        m = pattern.search(text)
+        if m:
+            return m.group(1), source
+    return text, default_source
 
 # card_kind mapping (Decklog)
 CARD_KIND_MAP = {
@@ -264,8 +292,7 @@ def _scrape_bottleneko(deck_code, merge_alts=True):
     # Build series code → info map from top-level 'series' field
     series_info_map = {}  # seriesCode → {name, cover}
     for s in data.get('series', []):
-        zh_name = s.get('i18n', {}).get('zh', {}).get('name', '')
-        display_name = zh_name or s.get('name', '')
+        display_name = s.get('nameZh', '') or s.get('name', '')
         cover = s.get('cover', '')
         for code in s.get('code', []):
             series_info_map[code] = {'name': display_name, 'cover': cover}
@@ -283,8 +310,12 @@ def _scrape_bottleneko(deck_code, merge_alts=True):
 
         color = c.get('color', '')  # already red/blue/yellow/green
 
-        # Derive image path from card number
-        img = _card_number_to_img_path(card_number)
+        # Bottleneko now hosts its own card images (some cards, e.g. promos,
+        # were never scraped onto ws-tcg.com under the guessed folder
+        # naming), so use Bottleneko's CDN directly via scraperId. Fall back
+        # to the ws-tcg.com path guess only if scraperId is ever missing.
+        scraper_id = c.get('scraperId', '') or c.get('scraper', '')
+        img = f'https://img.bottleneko.app/ws/{scraper_id}.png' if scraper_id else _card_number_to_img_path(card_number)
 
         raw_cards.append({
             'card_number': card_number,
